@@ -1,0 +1,32 @@
+# 医生服务系统 - 数据库容器
+# 用途：为拉取本仓库的人提供一份完全一致的 PostgreSQL，免去手动安装/配置。
+# 首次启动会自动执行 docker/initdb/ 下的 SQL（安装 uuid-ossp 扩展）。
+#
+# 启动：docker compose up -d
+# 停止：docker compose down        （加 -v 会连同数据一起删除）
+#
+# 注意：容器映射宿主机 5432 端口。若本机已有 PostgreSQL 占用 5432，
+#       请先停掉它，或把下方 "5432:5432" 改成其它端口（同时改 backend/.env.development 的 DB_PORT）。
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: doctor_service_db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: doctor_service_dev
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      - ./docker/initdb:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d doctor_service_dev"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+volumes:
+  pgdata:

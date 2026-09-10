@@ -1,0 +1,23 @@
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { IsEnum, IsOptional, IsString, IsUUID, Length } from 'class-validator';
+
+export class CreateHealthRecordDto {
+  @ApiProperty({ description: '患者ID' })
+  @IsUUID()
+  patient_id: string;
+
+  @ApiProperty({ description: '健康计划' })
+  @IsString()
+  @Length(1, 200)
+  plan: string;
+
+  @ApiPropertyOptional({ description: '最新指标' })
+  @IsOptional()
+  @IsString()
+  metrics?: string;
+
+  @ApiPropertyOptional({ description: '预警等级', enum: ['正常', '预警', '异常'] })
+  @IsOptional()
+  @IsEnum(['正常', '预警', '异常'])
+  alert_level?: '正常' | '预警' | '异常';
+}
