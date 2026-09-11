@@ -1,9 +1,15 @@
-import { Injectable, UnauthorizedException } from '@nestjs/common';
+import {
+  Injectable,
+  UnauthorizedException,
+  ConflictException,
+} from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import * as bcrypt from 'bcrypt';
 import { User } from '../users/entities/user.entity';
+import { RegisterDto } from './dto/register.dto';
+import { sanitizeUser } from '../../common/utils/sanitize-user';
 
 @Injectable()
 export class AuthService {
@@ -45,6 +51,33 @@ export class AuthService {
   }
 
   /**
+   * 注册：校验唯一性 → 加密密码 → 创建用户（默认 doctor 角色）→ 自动登录
+   */
+  async register(dto: RegisterDto) {
+    const { username, email, password, phone, real_name } = dto;
+
+    const byUsername = await this.usersRepository.findOne({ where: { username } });
+    if (byUsername) throw new ConflictException('用户名已存在');
+
+    const byEmail = await this.usersRepository.findOne({ where: { email } });
+    if (byEmail) throw new ConflictException('邮箱已被注册');
+
+    const password_hash = await this.hashPassword(password);
+    const user = this.usersRepository.create({
+      username,
+      email,
+      password_hash,
+      roles: ['doctor'],
+      status: 'active',
+      ...(phone ? { phone } : {}),
+      ...(real_name ? { real_name } : {}),
+    });
+    await this.usersRepository.save(user);
+
+    return this.generateToken(user);
+  }
+
+  /**
    * 生成JWT Token
    */
   async generateToken(user: User) {
@@ -56,12 +89,7 @@ export class AuthService {
     };
     return {
       access_token: this.jwtService.sign(payload),
-      user: {
-        id: user.id,
-        username: user.username,
-        email: user.email,
-        roles: user.roles,
-      },
+      user: sanitizeUser(user),
     };
   }
 

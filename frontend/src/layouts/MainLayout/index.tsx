@@ -65,6 +65,11 @@ const MainLayout: React.FC = () => {
 
   const userMenuItems: MenuProps['items'] = [
     {
+      key: 'profile',
+      icon: <UserOutlined />,
+      label: '个人档案',
+    },
+    {
       key: 'logout',
       icon: <LogoutOutlined />,
       label: '退出登录',
@@ -72,6 +77,9 @@ const MainLayout: React.FC = () => {
   ];
 
   const onUserMenuClick: MenuProps['onClick'] = ({ key }) => {
+    if (key === 'profile') {
+      navigate('/profile');
+    }
     if (key === 'logout') {
       handleLogout();
     }
@@ -113,8 +121,8 @@ const MainLayout: React.FC = () => {
 
           <Dropdown menu={{ items: userMenuItems, onClick: onUserMenuClick }}>
             <Space className="main-user">
-              <Avatar size="small" icon={<UserOutlined />} />
-              <span>{user.username || '未登录'}</span>
+              <Avatar size="small" src={user.avatar || undefined} icon={<UserOutlined />} />
+              <span>{user.real_name || user.username || '未登录'}</span>
             </Space>
           </Dropdown>
         </Header>

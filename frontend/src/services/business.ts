@@ -8,6 +8,7 @@ import type {
   HealthRecord,
   SocialPost,
   AuditLog,
+  UserProfile,
 } from './types';
 
 // 各业务模块的 API 封装，统一返回 data（后端响应为 { list, total, page, pageSize }）
@@ -82,4 +83,14 @@ export const socialApi = {
 export const auditApi = {
   list: (params?: Record<string, unknown>) =>
     api.get<Paginated<AuditLog>>('/audit', { params }).then((r) => r.data),
+};
+
+export const usersApi = {
+  getMe: () => api.get<UserProfile>('/users/me').then((r) => r.data),
+  updateMe: (data: Partial<UserProfile>) =>
+    api.patch<UserProfile>('/users/me', data).then((r) => r.data),
+  changePassword: (data: { old_password: string; new_password: string }) =>
+    api.post('/users/me/password', data).then((r) => r.data),
+  uploadAvatar: (formData: FormData) =>
+    api.post<UserProfile>('/users/me/avatar', formData).then((r) => r.data),
 };

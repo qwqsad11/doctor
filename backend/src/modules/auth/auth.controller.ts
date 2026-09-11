@@ -2,6 +2,7 @@ import { Controller, Post, Body, HttpCode, HttpStatus } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
 import { AuthService } from './auth.service';
 import { LoginDto } from './dto/login.dto';
+import { RegisterDto } from './dto/register.dto';
 import { Public } from '../../common/decorators/public.decorator';
 
 @ApiTags('认证')
@@ -36,11 +37,8 @@ export class AuthController {
     status: 201,
     description: '注册成功',
   })
-  async register() {
-    // TODO: 实现注册逻辑
-    return {
-      message: '注册成功',
-    };
+  async register(@Body() registerDto: RegisterDto) {
+    return this.authService.register(registerDto);
   }
 
   /**

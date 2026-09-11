@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Form, Input, Button, Card, Space, message, Spin } from 'antd';
 import { UserOutlined, LockOutlined } from '@ant-design/icons';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { useDispatch } from 'react-redux';
 import { loginStart, loginSuccess, loginFailure } from '@/store/slices/authSlice';
 import { setUser } from '@/store/slices/userSlice';
@@ -82,6 +82,9 @@ const LoginPage: React.FC = () => {
           </Form>
 
           <div className="login-footer">
+            <p>
+              没有账号？<Link to="/register">去注册</Link>
+            </p>
             <p>© 2026 医生服务系统 v0.1.0</p>
           </div>
         </Space>

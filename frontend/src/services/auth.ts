@@ -1,18 +1,22 @@
 import api from './api';
+import type { UserProfile } from './types';
 
 export interface LoginRequest {
   username: string;
   password: string;
 }
 
+export interface RegisterRequest {
+  username: string;
+  email: string;
+  password: string;
+  phone?: string;
+  real_name?: string;
+}
+
 export interface LoginResponse {
   access_token: string;
-  user: {
-    id: string;
-    username: string;
-    email: string;
-    roles: string[];
-  };
+  user: UserProfile;
 }
 
 export const authService = {
@@ -25,9 +29,9 @@ export const authService = {
   },
 
   /**
-   * 注册
+   * 注册（成功后返回 token 与用户信息，自动登录）
    */
-  register: async (data: any) => {
+  register: async (data: RegisterRequest): Promise<LoginResponse> => {
     const response = await api.post('/auth/register', data);
     return response.data;
   },

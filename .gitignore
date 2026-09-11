@@ -35,3 +35,6 @@ Thumbs.db
 *.sqlite
 *.sqlite3
 pgdata/
+
+# 上传文件（头像等，运行时本地生成，勿提交）
+uploads/

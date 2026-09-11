@@ -13,6 +13,22 @@ export interface PageParams {
   pageSize?: number;
 }
 
+export interface UserProfile {
+  id: string;
+  username: string;
+  email: string;
+  phone: string | null;
+  real_name: string | null;
+  gender: '男' | '女' | null;
+  department: string | null;
+  title: string | null;
+  hospital: string | null;
+  bio: string | null;
+  avatar: string | null;
+  roles: string[];
+  status: string;
+}
+
 export interface Patient {
   id: string; // uuid
   patient_no: string;

@@ -4,6 +4,8 @@ import { useAuth } from '@/hooks/useAuth';
 
 // Pages
 const LoginPage = React.lazy(() => import('@/pages/Login'));
+const RegisterPage = React.lazy(() => import('@/pages/Register'));
+const ProfilePage = React.lazy(() => import('@/pages/Profile'));
 const MainLayout = React.lazy(() => import('@/layouts/MainLayout'));
 const DashboardPage = React.lazy(() => import('@/pages/Dashboard'));
 const PatientsPage = React.lazy(() => import('@/pages/Patients'));
@@ -43,6 +45,7 @@ const Router: React.FC = () => {
     >
       <Routes>
         <Route path="/login" element={<LoginPage />} />
+        <Route path="/register" element={<RegisterPage />} />
 
         <Route
           path="/"
@@ -61,6 +64,7 @@ const Router: React.FC = () => {
           <Route path="health" element={<HealthPage />} />
           <Route path="social" element={<SocialPage />} />
           <Route path="audit" element={<AuditPage />} />
+          <Route path="profile" element={<ProfilePage />} />
         </Route>
 
         <Route path="*" element={<Navigate to="/dashboard" replace />} />
