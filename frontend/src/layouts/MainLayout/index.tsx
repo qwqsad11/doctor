@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { Layout, Menu, Dropdown, Avatar, Space } from 'antd';
 import type { MenuProps } from 'antd';
 import {
@@ -14,12 +14,14 @@ import {
   UserOutlined,
   MenuFoldOutlined,
   MenuUnfoldOutlined,
+  SettingOutlined,
 } from '@ant-design/icons';
 import { Outlet, useNavigate, useLocation } from 'react-router-dom';
 import { useDispatch } from 'react-redux';
 import { logout } from '@/store/slices/authSlice';
-import { clearUser } from '@/store/slices/userSlice';
+import { clearUser, setUser } from '@/store/slices/userSlice';
 import { useAuth } from '@/hooks/useAuth';
+import { usersApi } from '@/services/business';
 import './MainLayout.css';
 
 const { Header, Sider, Content } = Layout;
@@ -41,21 +43,29 @@ const MENU_ITEMS: MenuEntry[] = [
   { key: '/audit', icon: <AuditOutlined />, label: '操作审计' },
 ];
 
-const TITLES: Record<string, string> = Object.fromEntries(
-  MENU_ITEMS.map((m) => [m.key, m.label]),
-);
-
 const MainLayout: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const dispatch = useDispatch();
-  const { user } = useAuth();
+  const { user, isAuthenticated } = useAuth();
   const [collapsed, setCollapsed] = useState(false);
 
+  useEffect(() => {
+    if (!isAuthenticated || user.id) return;
+
+    // Restore the header identity after a browser refresh from the saved token.
+    usersApi.getMe().then((profile) => dispatch(setUser(profile))).catch(() => undefined);
+  }, [dispatch, isAuthenticated, user.id]);
+
+  const menuItems = user.roles?.includes('admin')
+    ? [...MENU_ITEMS, { key: '/admin', icon: <SettingOutlined />, label: '管理授权' }]
+    : MENU_ITEMS;
+  const titles = Object.fromEntries(menuItems.map((m) => [m.key, m.label]));
+
   const selectedKey = useMemo(() => {
-    const match = MENU_ITEMS.find((m) => location.pathname.startsWith(m.key));
+    const match = menuItems.find((m) => location.pathname.startsWith(m.key));
     return match?.key ?? '/dashboard';
-  }, [location.pathname]);
+  }, [location.pathname, menuItems]);
 
   const handleLogout = () => {
     dispatch(logout());
@@ -102,7 +112,7 @@ const MainLayout: React.FC = () => {
           theme="dark"
           mode="inline"
           selectedKeys={[selectedKey]}
-          items={MENU_ITEMS.map((m) => ({ key: m.key, icon: m.icon, label: m.label }))}
+          items={menuItems.map((m) => ({ key: m.key, icon: m.icon, label: m.label }))}
           onClick={({ key }) => navigate(key)}
         />
       </Sider>
@@ -116,7 +126,7 @@ const MainLayout: React.FC = () => {
             >
               {collapsed ? <MenuUnfoldOutlined /> : <MenuFoldOutlined />}
             </span>
-            <span className="main-breadcrumb">{TITLES[selectedKey] ?? '工作台'}</span>
+            <span className="main-breadcrumb">{titles[selectedKey] ?? '工作台'}</span>
           </Space>
 
           <Dropdown menu={{ items: userMenuItems, onClick: onUserMenuClick }}>

@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Patient } from './entities/patient.entity';
@@ -57,14 +57,17 @@ export class PatientsService {
     return { list, total, page, pageSize };
   }
 
-  async findOne(id: string) {
+  async findOne(id: string, user?: CurrentUserPayload) {
     const patient = await this.patientsRepository.findOne({ where: { id } });
     if (!patient) throw new NotFoundException('患者不存在');
+    if (user && !this.isAdmin(user) && patient.doctor_id !== user.userId) {
+      throw new ForbiddenException('无权访问该患者档案');
+    }
     return patient;
   }
 
   async update(id: string, dto: UpdatePatientDto, user: CurrentUserPayload) {
-    const patient = await this.findOne(id);
+    const patient = await this.findOne(id, user);
     Object.assign(patient, dto);
     const saved = await this.patientsRepository.save(patient);
     await this.auditService.record(user, '修改患者档案', saved.name, '成功');
@@ -72,7 +75,7 @@ export class PatientsService {
   }
 
   async remove(id: string, user: CurrentUserPayload) {
-    const patient = await this.findOne(id);
+    const patient = await this.findOne(id, user);
     await this.patientsRepository.remove(patient);
     await this.auditService.record(user, '删除患者', patient.name, '成功');
     return { message: '删除成功' };

@@ -95,6 +95,15 @@ const ConsultationsPage: React.FC = () => {
     }
   };
 
+  const exportRecord = (record: Consultation) => {
+    const blob = new Blob([`问诊记录\n编号：${record.consultation_no}\n患者：${record.patient_name}\n主诉：${record.symptom || '-'}\n医嘱：${record.advice || '-'}`], { type: 'text/plain;charset=utf-8' });
+    const link = document.createElement('a');
+    link.href = URL.createObjectURL(blob);
+    link.download = `${record.consultation_no}-record.txt`;
+    link.click();
+    URL.revokeObjectURL(link.href);
+  };
+
   const handleDelete = async (id: string) => {
     try {
       await consultationsApi.remove(id);
@@ -205,6 +214,9 @@ const ConsultationsPage: React.FC = () => {
           <Form.Item name="symptom" label="主诉">
             <Input.TextArea rows={3} placeholder="如：反复头晕三天" />
           </Form.Item>
+          <Form.Item name="attachments" label="图片/附件说明（本地模拟）">
+            <Input placeholder="如：blood-pressure-photo.jpg" />
+          </Form.Item>
         </Form>
       </Modal>
 
@@ -212,7 +224,7 @@ const ConsultationsPage: React.FC = () => {
         title="问诊记录"
         open={!!detail}
         onCancel={() => setDetail(null)}
-        footer={<Button onClick={() => setDetail(null)}>关闭</Button>}
+        footer={detail ? <Space><Button onClick={() => exportRecord(detail)}>导出文本记录</Button><Button onClick={() => setDetail(null)}>关闭</Button></Space> : null}
       >
         {detail && (
           <Descriptions column={1} bordered size="small">
@@ -223,6 +235,8 @@ const ConsultationsPage: React.FC = () => {
             <Descriptions.Item label="状态">{detail.status}</Descriptions.Item>
             <Descriptions.Item label="主诉">{detail.symptom || '-'}</Descriptions.Item>
             <Descriptions.Item label="医嘱">{detail.advice || '-'}</Descriptions.Item>
+            <Descriptions.Item label="附件">{detail.attachments || '-'}</Descriptions.Item>
+            <Descriptions.Item label="视频">{detail.type === '视频' ? '本地模拟视频房间，可记录状态和报告，不连接真实视频服务' : '-'}</Descriptions.Item>
             <Descriptions.Item label="创建时间">{formatDateTime(detail.created_at)}</Descriptions.Item>
           </Descriptions>
         )}

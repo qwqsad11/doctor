@@ -5,18 +5,26 @@ import {
   BadRequestException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { IsNull, Repository } from 'typeorm';
 import * as bcrypt from 'bcrypt';
 import { User } from './entities/user.entity';
 import { UpdateProfileDto } from './dto/update-profile.dto';
 import { ChangePasswordDto } from './dto/change-password.dto';
 import { sanitizeUser } from '../../common/utils/sanitize-user';
+import { TempPermission } from './entities/temp-permission.entity';
+import { AuditService } from '../audit/audit.service';
+import { CurrentUserPayload } from '../../common/decorators/current-user.decorator';
+import { SetUserRolesDto } from './dto/set-user-roles.dto';
+import { CreateTempPermissionDto } from './dto/create-temp-permission.dto';
 
 @Injectable()
 export class UsersService {
   constructor(
     @InjectRepository(User)
     private usersRepository: Repository<User>,
+    @InjectRepository(TempPermission)
+    private tempPermissionsRepository: Repository<TempPermission>,
+    private auditService: AuditService,
   ) {}
 
   async findById(id: string): Promise<User> {
@@ -65,5 +73,70 @@ export class UsersService {
   async updateAvatar(userId: string, avatar: string) {
     await this.usersRepository.update(userId, { avatar });
     return this.getProfile(userId);
+  }
+
+  async listUsers() {
+    return (await this.usersRepository.find({ order: { username: 'ASC' } })).map(sanitizeUser);
+  }
+
+  async setRoles(id: string, dto: SetUserRolesDto, actor: CurrentUserPayload) {
+    const user = await this.findById(id);
+    if (user.id === actor.userId && !dto.roles.includes('admin')) {
+      throw new BadRequestException('不能移除自己的管理员角色');
+    }
+    user.roles = dto.roles;
+    await this.usersRepository.save(user);
+    await this.auditService.record(actor, '修改用户角色', `${user.username}: ${dto.roles.join(',')}`);
+    return sanitizeUser(user);
+  }
+
+  async listTempPermissions() {
+    await this.revokeExpiredPermissions();
+    return this.tempPermissionsRepository.find({
+      where: { revokedAt: IsNull() },
+      order: { expiresAt: 'ASC' },
+    });
+  }
+
+  async createTempPermission(dto: CreateTempPermissionDto, actor: CurrentUserPayload) {
+    await this.revokeExpiredPermissions();
+    if (new Date(dto.expiresAt) <= new Date()) throw new BadRequestException('过期时间必须晚于当前时间');
+    const user = await this.findById(dto.userId);
+    const permission = await this.tempPermissionsRepository.save(this.tempPermissionsRepository.create({
+      ...dto,
+      expiresAt: new Date(dto.expiresAt),
+      reason: dto.reason ?? null,
+    }));
+    await this.auditService.record(actor, '授予临时权限', `${user.username}: ${dto.resourceType}/${dto.resourceId}`);
+    return permission;
+  }
+
+  async revokeTempPermission(id: string, actor: CurrentUserPayload, automatic = false) {
+    const permission = await this.tempPermissionsRepository.findOne({ where: { id } });
+    if (!permission || permission.revokedAt) throw new NotFoundException('临时权限不存在或已撤销');
+    permission.revokedAt = new Date();
+    await this.tempPermissionsRepository.save(permission);
+    await this.auditService.record(actor, automatic ? '自动撤销临时权限' : '撤销临时权限', `${permission.resourceType}/${permission.resourceId}`);
+  }
+
+  async canViewConsultation(userId: string, consultationId: string) {
+    await this.revokeExpiredPermissions();
+    return !!(await this.tempPermissionsRepository.findOne({
+      where: { userId, resourceType: 'consultation', resourceId: consultationId, permissionType: 'view', revokedAt: IsNull() },
+    }));
+  }
+
+  async revokeConsultationPermissions(consultationId: string, actor: CurrentUserPayload) {
+    const active = await this.tempPermissionsRepository.find({
+      where: { resourceType: 'consultation', resourceId: consultationId, revokedAt: IsNull() },
+    });
+    await Promise.all(active.map((permission) => this.revokeTempPermission(permission.id, actor, true)));
+  }
+
+  private async revokeExpiredPermissions() {
+    const expired = await this.tempPermissionsRepository.createQueryBuilder('p')
+      .where('p.revokedAt IS NULL AND p.expiresAt <= :now', { now: new Date() }).getMany();
+    const system: CurrentUserPayload = { userId: 'system', username: 'system', email: 'system@local', roles: [] };
+    await Promise.all(expired.map((permission) => this.revokeTempPermission(permission.id, system, true)));
   }
 }

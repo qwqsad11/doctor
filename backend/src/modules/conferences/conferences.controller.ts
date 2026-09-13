@@ -44,8 +44,8 @@ export class ConferencesController {
 
   @Get(':id')
   @ApiOperation({ summary: '会诊详情' })
-  findOne(@Param('id') id: string) {
-    return this.conferencesService.findOne(id);
+  findOne(@Param('id') id: string, @CurrentUser() user: CurrentUserPayload) {
+    return this.conferencesService.findOne(id, user);
   }
 
   @Patch(':id')

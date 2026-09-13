@@ -44,8 +44,8 @@ export class ConsultationsController {
 
   @Get(':id')
   @ApiOperation({ summary: '问诊详情' })
-  findOne(@Param('id') id: string) {
-    return this.consultationsService.findOne(id);
+  findOne(@Param('id') id: string, @CurrentUser() user: CurrentUserPayload) {
+    return this.consultationsService.findOne(id, user);
   }
 
   @Patch(':id')

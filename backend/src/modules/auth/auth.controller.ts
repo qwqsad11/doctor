@@ -23,7 +23,7 @@ export class AuthController {
     description: '登录成功，返回JWT Token',
   })
   async login(@Body() loginDto: LoginDto) {
-    return this.authService.login(loginDto.username, loginDto.password);
+    return this.authService.login(loginDto);
   }
 
   /**

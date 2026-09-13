@@ -16,6 +16,18 @@ export class CreateHealthRecordDto {
   @IsString()
   metrics?: string;
 
+  @ApiPropertyOptional({ description: '本地模拟设备来源' })
+  @IsOptional()
+  @IsString()
+  @Length(1, 100)
+  device_source?: string;
+
+  @ApiPropertyOptional({ description: '本地提醒规则' })
+  @IsOptional()
+  @IsString()
+  @Length(1, 200)
+  reminder?: string;
+
   @ApiPropertyOptional({ description: '预警等级', enum: ['正常', '预警', '异常'] })
   @IsOptional()
   @IsEnum(['正常', '预警', '异常'])

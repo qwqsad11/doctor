@@ -4,6 +4,8 @@ import type { UserProfile } from './types';
 export interface LoginRequest {
   username: string;
   password: string;
+  factor?: 'sms' | 'email' | 'face';
+  verification_code?: string;
 }
 
 export interface RegisterRequest {
@@ -15,8 +17,11 @@ export interface RegisterRequest {
 }
 
 export interface LoginResponse {
-  access_token: string;
-  user: UserProfile;
+  access_token?: string;
+  user?: UserProfile;
+  mfa_required?: boolean;
+  factors?: string[];
+  demo_note?: string;
 }
 
 export const authService = {

@@ -27,6 +27,12 @@ export class HealthRecord {
   @Column({ length: 200, nullable: true })
   metrics: string;
 
+  @Column({ length: 100, nullable: true })
+  device_source: string;
+
+  @Column({ length: 200, nullable: true })
+  reminder: string;
+
   @Column({ type: 'enum', enum: ['正常', '预警', '异常'], default: '正常' })
   alert_level: AlertLevel;
 

@@ -38,8 +38,8 @@ export class EmrController {
 
   @Get(':id')
   @ApiOperation({ summary: '病历详情' })
-  findOne(@Param('id') id: string) {
-    return this.emrService.findOne(id);
+  findOne(@Param('id') id: string, @CurrentUser() user: CurrentUserPayload) {
+    return this.emrService.findOne(id, user);
   }
 
   @Patch(':id')

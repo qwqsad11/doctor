@@ -40,6 +40,7 @@ const RegisterPage: React.FC = () => {
         real_name,
         password,
       });
+      if (!response.access_token || !response.user) throw new Error('注册响应不完整');
       dispatch(loginSuccess(response.access_token));
       dispatch(setUser(response.user));
       message.success('注册成功，已自动登录');

@@ -25,8 +25,11 @@ api.interceptors.request.use(
 api.interceptors.response.use(
   (response) => response,
   (error: AxiosError) => {
-    // 处理 401 未授权
-    if (error.response?.status === 401) {
+    const isAuthenticationRequest = error.config?.url?.startsWith('/auth/');
+    const isAuthenticationPage = ['/login', '/register'].includes(window.location.pathname);
+
+    // Login and MFA failures must remain on the form so the user can correct them.
+    if (error.response?.status === 401 && !isAuthenticationRequest && !isAuthenticationPage) {
       localStorage.removeItem('token');
       window.location.href = '/login';
     }

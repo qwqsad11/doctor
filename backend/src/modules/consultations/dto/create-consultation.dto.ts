@@ -14,4 +14,9 @@ export class CreateConsultationDto {
   @IsOptional()
   @IsString()
   symptom?: string;
+
+  @ApiPropertyOptional({ description: '本地模拟附件说明' })
+  @IsOptional()
+  @IsString()
+  attachments?: string;
 }

@@ -29,6 +29,18 @@ export interface UserProfile {
   status: string;
 }
 
+export interface TempPermission {
+  id: string;
+  userId: string;
+  resourceId: string;
+  resourceType: 'consultation';
+  permissionType: 'view';
+  grantedAt: string;
+  expiresAt: string;
+  reason: string | null;
+  revokedAt: string | null;
+}
+
 export interface Patient {
   id: string; // uuid
   patient_no: string;
@@ -70,6 +82,8 @@ export interface Consultation {
   status: '待接诊' | '进行中' | '已完成';
   symptom: string | null;
   advice: string | null;
+  attachments?: string | null;
+  video_recording?: string | null;
   started_at: string | null;
   ended_at: string | null;
   created_at: string;
@@ -98,6 +112,8 @@ export interface HealthRecord {
   patient_name: string;
   plan: string;
   metrics: string | null;
+  device_source?: string | null;
+  reminder?: string | null;
   alert_level: '正常' | '预警' | '异常';
   doctor_id: string | null;
   created_at: string;

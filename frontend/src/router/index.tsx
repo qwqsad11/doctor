@@ -15,6 +15,7 @@ const ConferencesPage = React.lazy(() => import('@/pages/Conferences'));
 const HealthPage = React.lazy(() => import('@/pages/Health'));
 const SocialPage = React.lazy(() => import('@/pages/Social'));
 const AuditPage = React.lazy(() => import('@/pages/Audit'));
+const AdminPage = React.lazy(() => import('@/pages/Admin'));
 
 // Protected Route Component
 const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
@@ -25,6 +26,11 @@ const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) =
   }
 
   return <>{children}</>;
+};
+
+const AdminRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const { user } = useAuth();
+  return user.roles?.includes('admin') ? <>{children}</> : <Navigate to="/dashboard" replace />;
 };
 
 const Router: React.FC = () => {
@@ -64,6 +70,7 @@ const Router: React.FC = () => {
           <Route path="health" element={<HealthPage />} />
           <Route path="social" element={<SocialPage />} />
           <Route path="audit" element={<AuditPage />} />
+          <Route path="admin" element={<AdminRoute><AdminPage /></AdminRoute>} />
           <Route path="profile" element={<ProfilePage />} />
         </Route>
 

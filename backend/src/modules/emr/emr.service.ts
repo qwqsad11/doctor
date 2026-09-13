@@ -1,4 +1,5 @@
 import {
+  ForbiddenException,
   Injectable,
   NotFoundException,
   BadRequestException,
@@ -71,14 +72,15 @@ export class EmrService {
     return { list, total, page, pageSize };
   }
 
-  async findOne(id: string) {
+  async findOne(id: string, user?: CurrentUserPayload) {
     const emr = await this.emrRepository.findOne({ where: { id } });
     if (!emr) throw new NotFoundException('病历不存在');
+    if (user && !this.isAdmin(user) && emr.doctor_id !== user.userId) throw new ForbiddenException('无权访问该病历');
     return emr;
   }
 
   async update(id: string, dto: UpdateEmrDto, user: CurrentUserPayload) {
-    const emr = await this.findOne(id);
+    const emr = await this.findOne(id, user);
     Object.assign(emr, dto);
     const saved = await this.emrRepository.save(emr);
     await this.auditService.record(user, '修改病历', saved.emr_no, '成功');
@@ -86,7 +88,7 @@ export class EmrService {
   }
 
   async remove(id: string, user: CurrentUserPayload) {
-    const emr = await this.findOne(id);
+    const emr = await this.findOne(id, user);
     await this.emrRepository.remove(emr);
     await this.auditService.record(user, '删除病历', emr.emr_no, '成功');
     return { message: '删除成功' };

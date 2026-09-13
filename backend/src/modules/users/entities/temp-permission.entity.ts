@@ -1,5 +1,4 @@
-import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, ManyToOne, Unique } from 'typeorm';
-import { User } from './user.entity';
+import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, Unique } from 'typeorm';
 
 @Entity('temp_permissions')
 @Unique(['userId', 'resourceType', 'resourceId', 'expiresAt'])
@@ -10,11 +9,11 @@ export class TempPermission {
   @Column('uuid')
   userId: string;
 
-  @Column()
-  resourceId: number;
+  @Column({ length: 50 })
+  resourceId: string;
 
   @Column({ length: 50 })
-  resourceType: string; // patient, emr, conference
+  resourceType: string; // consultation
 
   @Column({ length: 50 })
   permissionType: string; // view, edit
@@ -25,12 +24,12 @@ export class TempPermission {
   @Column()
   expiresAt: Date;
 
-  @Column({ nullable: true })
-  reason: string;
+  @Column({ type: 'varchar', nullable: true })
+  reason: string | null;
 
   @Column({ default: true })
   auto_revoke: boolean;
 
-  @Column({ nullable: true })
-  revokedAt: Date;
+  @Column({ type: 'timestamp', nullable: true })
+  revokedAt: Date | null;
 }

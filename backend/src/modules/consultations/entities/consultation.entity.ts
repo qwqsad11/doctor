@@ -43,6 +43,12 @@ export class Consultation {
   @Column('text', { nullable: true })
   advice: string;
 
+  @Column('text', { nullable: true })
+  attachments: string;
+
+  @Column('text', { nullable: true })
+  video_recording: string;
+
   @Column({ nullable: true })
   started_at: Date;
 

@@ -8,6 +8,7 @@ import type {
   HealthRecord,
   SocialPost,
   AuditLog,
+  TempPermission,
   UserProfile,
 } from './types';
 
@@ -93,4 +94,11 @@ export const usersApi = {
     api.post('/users/me/password', data).then((r) => r.data),
   uploadAvatar: (formData: FormData) =>
     api.post<UserProfile>('/users/me/avatar', formData).then((r) => r.data),
+  list: () => api.get<UserProfile[]>('/users/admin/users').then((r) => r.data),
+  setRoles: (id: string, roles: string[]) =>
+    api.patch<UserProfile>(`/users/admin/users/${id}/roles`, { roles }).then((r) => r.data),
+  listTempPermissions: () => api.get<TempPermission[]>('/users/admin/temp-permissions').then((r) => r.data),
+  createTempPermission: (data: Omit<TempPermission, 'id' | 'grantedAt' | 'revokedAt'>) =>
+    api.post<TempPermission>('/users/admin/temp-permissions', data).then((r) => r.data),
+  revokeTempPermission: (id: string) => api.delete(`/users/admin/temp-permissions/${id}`).then((r) => r.data),
 };

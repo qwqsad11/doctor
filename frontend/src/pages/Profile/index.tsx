@@ -8,6 +8,7 @@ import {
   Select,
   Button,
   Avatar,
+  Alert,
   Upload,
   Space,
   Tag,
@@ -83,6 +84,13 @@ const ProfilePage: React.FC = () => {
 
   return (
     <div>
+      <Alert
+        type="info"
+        showIcon
+        style={{ marginBottom: 16 }}
+        message="权限范围"
+        description="当前角色决定可见数据范围；系统数据模型支持按患者、病历或会诊授予带到期时间的临时查看/编辑权限。课程演示默认仅展示本人负责的数据。"
+      />
       <Card>
         <Row gutter={24} align="middle">
           <Col flex="160px" style={{ textAlign: 'center' }}>

@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Conference } from './entities/conference.entity';
@@ -71,16 +71,17 @@ export class ConferencesService {
     return { list, total, page, pageSize };
   }
 
-  async findOne(id: string) {
+  async findOne(id: string, user?: CurrentUserPayload) {
     const conference = await this.conferencesRepository.findOne({
       where: { id },
     });
     if (!conference) throw new NotFoundException('会诊不存在');
+    if (user && !this.isAdmin(user) && conference.initiator_id !== user.userId) throw new ForbiddenException('无权访问该会诊');
     return conference;
   }
 
   async update(id: string, dto: UpdateConferenceDto, user: CurrentUserPayload) {
-    const conference = await this.findOne(id);
+    const conference = await this.findOne(id, user);
     Object.assign(conference, dto);
     const saved = await this.conferencesRepository.save(conference);
     await this.auditService.record(user, '更新会诊', saved.conference_no, '成功');
@@ -88,7 +89,7 @@ export class ConferencesService {
   }
 
   async remove(id: string, user: CurrentUserPayload) {
-    const conference = await this.findOne(id);
+    const conference = await this.findOne(id, user);
     await this.conferencesRepository.remove(conference);
     await this.auditService.record(user, '删除会诊', conference.conference_no, '成功');
     return { message: '删除成功' };

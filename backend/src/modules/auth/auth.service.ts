@@ -9,10 +9,13 @@ import { Repository } from 'typeorm';
 import * as bcrypt from 'bcrypt';
 import { User } from '../users/entities/user.entity';
 import { RegisterDto } from './dto/register.dto';
+import { LoginDto } from './dto/login.dto';
 import { sanitizeUser } from '../../common/utils/sanitize-user';
 
 @Injectable()
 export class AuthService {
+  // Course-demo only: codes are kept in process memory and never sent externally.
+  private readonly pendingMfa = new Map<string, { factor: string; expiresAt: number }>();
   constructor(
     private jwtService: JwtService,
     @InjectRepository(User)
@@ -39,11 +42,32 @@ export class AuthService {
   /**
    * 登录：校验凭证 → 签发 JWT → 更新最后登录时间
    */
-  async login(username: string, password: string) {
-    const user = await this.validateUser(username, password);
+  async login(dto: LoginDto) {
+    const user = await this.validateUser(dto.username, dto.password);
     if (!user) {
       throw new UnauthorizedException('用户名或密码错误');
     }
+    if (user.status !== 'active') {
+      throw new UnauthorizedException('账户当前不可登录');
+    }
+
+    const key = `${user.id}:${dto.factor || 'none'}`;
+    if (!dto.factor || !dto.verification_code) {
+      return {
+        mfa_required: true,
+        factors: ['sms', 'email', 'face'],
+        demo_note: '演示环境不会发送短信或邮件；选择任一方式后使用演示码。',
+      };
+    }
+    const expected = dto.factor === 'face' ? 'FACE-DEMO' : '123456';
+    const pending = this.pendingMfa.get(key);
+    if (!pending || pending.expiresAt < Date.now()) {
+      this.pendingMfa.set(key, { factor: dto.factor, expiresAt: Date.now() + 5 * 60_000 });
+    }
+    if (dto.verification_code !== expected) {
+      throw new UnauthorizedException('演示验证码或人脸口令不正确');
+    }
+    this.pendingMfa.delete(key);
 
     await this.usersRepository.update(user.id, { last_login: new Date() });
 

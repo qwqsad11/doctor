@@ -91,6 +91,8 @@ const HealthPage: React.FC = () => {
       patient_id: record.patient_id,
       plan: record.plan,
       metrics: record.metrics,
+      device_source: record.device_source,
+      reminder: record.reminder,
       alert_level: record.alert_level,
     });
     setOpen(true);
@@ -224,6 +226,12 @@ const HealthPage: React.FC = () => {
           <Form.Item name="metrics" label="最新指标">
             <Input placeholder="如：血压 145/92" />
           </Form.Item>
+          <Form.Item name="device_source" label="设备来源（模拟）">
+            <Input placeholder="如：家用血压计（本地录入）" />
+          </Form.Item>
+          <Form.Item name="reminder" label="提醒规则（本地模拟）">
+            <Input placeholder="如：每日 08:00 服药提醒" />
+          </Form.Item>
           <Form.Item name="alert_level" label="预警等级">
             <Select options={levelOptions} />
           </Form.Item>
@@ -241,6 +249,8 @@ const HealthPage: React.FC = () => {
             <Descriptions.Item label="患者">{detail.patient_name}</Descriptions.Item>
             <Descriptions.Item label="健康计划">{detail.plan}</Descriptions.Item>
             <Descriptions.Item label="最新指标">{detail.metrics || '-'}</Descriptions.Item>
+            <Descriptions.Item label="设备来源">{detail.device_source || '手工/本地模拟'}</Descriptions.Item>
+            <Descriptions.Item label="提醒规则">{detail.reminder || '-'}</Descriptions.Item>
             <Descriptions.Item label="预警等级">{detail.alert_level}</Descriptions.Item>
             <Descriptions.Item label="更新时间">{formatDateTime(detail.updated_at)}</Descriptions.Item>
           </Descriptions>

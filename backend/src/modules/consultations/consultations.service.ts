@@ -1,4 +1,5 @@
 import {
+  ForbiddenException,
   Injectable,
   NotFoundException,
   BadRequestException,
@@ -12,6 +13,7 @@ import { UpdateConsultationDto } from './dto/update-consultation.dto';
 import { QueryConsultationDto } from './dto/query-consultation.dto';
 import { CurrentUserPayload } from '../../common/decorators/current-user.decorator';
 import { AuditService } from '../audit/audit.service';
+import { UsersService } from '../users/users.service';
 
 @Injectable()
 export class ConsultationsService {
@@ -21,6 +23,7 @@ export class ConsultationsService {
     @InjectRepository(Patient)
     private patientRepository: Repository<Patient>,
     private auditService: AuditService,
+    private usersService: UsersService,
   ) {}
 
   private isAdmin(user: CurrentUserPayload): boolean {
@@ -51,7 +54,11 @@ export class ConsultationsService {
     const qb = this.consultationsRepository.createQueryBuilder('c');
 
     if (!this.isAdmin(user)) {
-      qb.andWhere('c.doctor_id = :doctorId', { doctorId: user.userId });
+      qb.andWhere(`(c.doctor_id = :doctorId OR EXISTS (
+        SELECT 1 FROM temp_permissions p WHERE p."userId" = :doctorId
+        AND p."resourceType" = 'consultation' AND p."resourceId" = CAST(c.id AS varchar)
+        AND p."permissionType" = 'view' AND p."revokedAt" IS NULL AND p."expiresAt" > :now
+      ))`, { doctorId: user.userId, now: new Date() });
     }
     if (type) qb.andWhere('c.type = :type', { type });
     if (status) qb.andWhere('c.status = :status', { status });
@@ -71,16 +78,19 @@ export class ConsultationsService {
     return { list, total, page, pageSize };
   }
 
-  async findOne(id: string) {
+  async findOne(id: string, user?: CurrentUserPayload) {
     const consultation = await this.consultationsRepository.findOne({
       where: { id },
     });
     if (!consultation) throw new NotFoundException('问诊记录不存在');
+    if (user && !this.isAdmin(user) && consultation.doctor_id !== user.userId && !(await this.usersService.canViewConsultation(user.userId, id))) {
+      throw new ForbiddenException('无权访问该问诊');
+    }
     return consultation;
   }
 
   async update(id: string, dto: UpdateConsultationDto, user: CurrentUserPayload) {
-    const consultation = await this.findOne(id);
+    const consultation = await this.findOne(id, user);
     if (dto.status === '进行中' && !consultation.started_at) {
       consultation.started_at = new Date();
     }
@@ -89,12 +99,13 @@ export class ConsultationsService {
     }
     Object.assign(consultation, dto);
     const saved = await this.consultationsRepository.save(consultation);
+    if (dto.status === '已完成') await this.usersService.revokeConsultationPermissions(id, user);
     await this.auditService.record(user, '更新问诊', saved.consultation_no, '成功');
     return saved;
   }
 
   async remove(id: string, user: CurrentUserPayload) {
-    const consultation = await this.findOne(id);
+    const consultation = await this.findOne(id, user);
     await this.consultationsRepository.remove(consultation);
     await this.auditService.record(user, '删除问诊', consultation.consultation_no, '成功');
     return { message: '删除成功' };

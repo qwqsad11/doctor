@@ -1,4 +1,5 @@
 import {
+  ForbiddenException,
   Injectable,
   NotFoundException,
   BadRequestException,
@@ -66,14 +67,15 @@ export class HealthService {
     return { list, total, page, pageSize };
   }
 
-  async findOne(id: string) {
+  async findOne(id: string, user?: CurrentUserPayload) {
     const record = await this.healthRepository.findOne({ where: { id } });
     if (!record) throw new NotFoundException('健康记录不存在');
+    if (user && !this.isAdmin(user) && record.doctor_id !== user.userId) throw new ForbiddenException('无权访问该健康计划');
     return record;
   }
 
   async update(id: string, dto: UpdateHealthRecordDto, user: CurrentUserPayload) {
-    const record = await this.findOne(id);
+    const record = await this.findOne(id, user);
     Object.assign(record, dto);
     const saved = await this.healthRepository.save(record);
     await this.auditService.record(user, '调整健康计划', saved.patient_name, '成功');
@@ -81,7 +83,7 @@ export class HealthService {
   }
 
   async remove(id: string, user: CurrentUserPayload) {
-    const record = await this.findOne(id);
+    const record = await this.findOne(id, user);
     await this.healthRepository.remove(record);
     await this.auditService.record(user, '删除健康计划', record.patient_name, '成功');
     return { message: '删除成功' };

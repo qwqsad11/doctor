@@ -8,6 +8,8 @@ import {
   UploadedFile,
   UseInterceptors,
   BadRequestException,
+  Param,
+  Delete,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { ApiTags, ApiOperation } from '@nestjs/swagger';
@@ -18,6 +20,9 @@ import { UsersService } from './users.service';
 import { UpdateProfileDto } from './dto/update-profile.dto';
 import { ChangePasswordDto } from './dto/change-password.dto';
 import { CurrentUser, CurrentUserPayload } from '../../common/decorators/current-user.decorator';
+import { Roles } from '../../common/decorators/roles.decorator';
+import { SetUserRolesDto } from './dto/set-user-roles.dto';
+import { CreateTempPermissionDto } from './dto/create-temp-permission.dto';
 
 const AVATAR_EXT: Record<string, string> = {
   'image/jpeg': 'jpg',
@@ -76,5 +81,36 @@ export class UsersController {
     const base = `${req.protocol}://${req.get('host')}`;
     const url = `${base}/uploads/avatars/${filename}`;
     return this.usersService.updateAvatar(user.userId, url);
+  }
+
+  @Get('admin/users')
+  @Roles('admin')
+  listUsers() {
+    return this.usersService.listUsers();
+  }
+
+  @Patch('admin/users/:id/roles')
+  @Roles('admin')
+  setRoles(@Param('id') id: string, @Body() dto: SetUserRolesDto, @CurrentUser() user: CurrentUserPayload) {
+    return this.usersService.setRoles(id, dto, user);
+  }
+
+  @Get('admin/temp-permissions')
+  @Roles('admin')
+  listTempPermissions() {
+    return this.usersService.listTempPermissions();
+  }
+
+  @Post('admin/temp-permissions')
+  @Roles('admin')
+  createTempPermission(@Body() dto: CreateTempPermissionDto, @CurrentUser() user: CurrentUserPayload) {
+    return this.usersService.createTempPermission(dto, user);
+  }
+
+  @Delete('admin/temp-permissions/:id')
+  @Roles('admin')
+  async revokeTempPermission(@Param('id') id: string, @CurrentUser() user: CurrentUserPayload) {
+    await this.usersService.revokeTempPermission(id, user);
+    return { message: '临时权限已撤销' };
   }
 }

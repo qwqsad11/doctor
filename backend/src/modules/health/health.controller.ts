@@ -44,8 +44,8 @@ export class HealthController {
 
   @Get(':id')
   @ApiOperation({ summary: '健康计划详情' })
-  findOne(@Param('id') id: string) {
-    return this.healthService.findOne(id);
+  findOne(@Param('id') id: string, @CurrentUser() user: CurrentUserPayload) {
+    return this.healthService.findOne(id, user);
   }
 
   @Patch(':id')

@@ -41,8 +41,8 @@ export class PatientsController {
 
   @Get(':id')
   @ApiOperation({ summary: '患者详情' })
-  findOne(@Param('id') id: string) {
-    return this.patientsService.findOne(id);
+  findOne(@Param('id') id: string, @CurrentUser() user: CurrentUserPayload) {
+    return this.patientsService.findOne(id, user);
   }
 
   @Patch(':id')
