@@ -38,3 +38,13 @@ pgdata/
 
 # 上传文件（头像等，运行时本地生成，勿提交）
 uploads/
+.runtime/
+
+# Local requirements and AI tooling
+/要求/
+.codex/
+.agents/
+.cursor/
+.claude/
+.openai/
+.aider*
