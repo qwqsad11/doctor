@@ -5,17 +5,17 @@ import {
   CreateDateColumn,
   UpdateDateColumn,
   Index,
-} from 'typeorm';
+} from "typeorm";
 
-export type AlertLevel = '正常' | '预警' | '异常';
+export type AlertLevel = "正常" | "预警" | "异常";
 
-@Entity('health_records')
-@Index(['patient_id'])
+@Entity("health_records")
+@Index(["patient_id"])
 export class HealthRecord {
-  @PrimaryGeneratedColumn('uuid')
+  @PrimaryGeneratedColumn("uuid")
   id: string;
 
-  @Column('uuid')
+  @Column("uuid")
   patient_id: string;
 
   @Column({ length: 50 })
@@ -33,11 +33,20 @@ export class HealthRecord {
   @Column({ length: 200, nullable: true })
   reminder: string;
 
-  @Column({ type: 'enum', enum: ['正常', '预警', '异常'], default: '正常' })
+  @Column({ type: "enum", enum: ["正常", "预警", "异常"], default: "正常" })
   alert_level: AlertLevel;
 
-  @Column('uuid', { nullable: true })
+  @Column("uuid", { nullable: true })
   doctor_id: string | null;
+
+  @Column("text", { nullable: true }) goals: string;
+  @Column("text", { nullable: true }) guidance: string;
+  @Column("timestamptz", { nullable: true }) next_assessment_at: Date | null;
+  @Column("timestamptz", { nullable: true }) latest_measured_at: Date | null;
+  @Column({ type: "varchar", length: 64, nullable: true, select: false })
+  patient_access_hash: string | null;
+  @Column("timestamptz", { nullable: true })
+  patient_access_expires_at: Date | null;
 
   @CreateDateColumn()
   created_at: Date;

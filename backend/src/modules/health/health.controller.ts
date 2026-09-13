@@ -7,60 +7,109 @@ import {
   Param,
   Delete,
   Query,
-} from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
-import { HealthService } from './health.service';
-import { CreateHealthRecordDto } from './dto/create-health-record.dto';
-import { UpdateHealthRecordDto } from './dto/update-health-record.dto';
-import { QueryHealthRecordDto } from './dto/query-health-record.dto';
+  ParseUUIDPipe,
+  Headers,
+} from "@nestjs/common";
+import { ApiTags, ApiBearerAuth } from "@nestjs/swagger";
+import { HealthService } from "./health.service";
+import { CreateHealthRecordDto } from "./dto/create-health-record.dto";
+import { UpdateHealthRecordDto } from "./dto/update-health-record.dto";
+import { QueryHealthRecordDto } from "./dto/query-health-record.dto";
+import {
+  MeasurementDto,
+  ReminderDto,
+  AssessmentDto,
+} from "./dto/health-actions.dto";
 import {
   CurrentUser,
   CurrentUserPayload,
-} from '../../common/decorators/current-user.decorator';
-
-@ApiTags('健康管理')
+} from "../../common/decorators/current-user.decorator";
+import { Public } from "../../common/decorators/public.decorator";
+@ApiTags("健康管理")
 @ApiBearerAuth()
-@Controller('api/v1/health')
+@Controller("api/v1/health")
 export class HealthController {
-  constructor(private readonly healthService: HealthService) {}
-
-  @Post()
-  @ApiOperation({ summary: '制定健康计划' })
-  create(
+  constructor(private readonly service: HealthService) {}
+  @Public() @Get("patient-portal") patientView(
+    @Headers("x-patient-token") token: string,
+  ) {
+    return this.service.patientView(token || "");
+  }
+  @Public() @Post("patient-portal/measurements") patientUpload(
+    @Headers("x-patient-token") token: string,
+    @Body() dto: MeasurementDto,
+  ) {
+    return this.service.patientMeasurement(token || "", dto);
+  }
+  @Post() create(
     @Body() dto: CreateHealthRecordDto,
-    @CurrentUser() user: CurrentUserPayload,
+    @CurrentUser() u: CurrentUserPayload,
   ) {
-    return this.healthService.create(dto, user);
+    return this.service.create(dto, u);
   }
-
-  @Get()
-  @ApiOperation({ summary: '健康计划列表（分页 + 搜索）' })
-  findAll(
-    @Query() query: QueryHealthRecordDto,
-    @CurrentUser() user: CurrentUserPayload,
+  @Get() list(
+    @Query() q: QueryHealthRecordDto,
+    @CurrentUser() u: CurrentUserPayload,
   ) {
-    return this.healthService.findAll(query, user);
+    return this.service.findAll(q, u);
   }
-
-  @Get(':id')
-  @ApiOperation({ summary: '健康计划详情' })
-  findOne(@Param('id') id: string, @CurrentUser() user: CurrentUserPayload) {
-    return this.healthService.findOne(id, user);
+  @Get(":id") detail(
+    @Param("id", ParseUUIDPipe) id: string,
+    @CurrentUser() u: CurrentUserPayload,
+  ) {
+    return this.service.detail(id, u);
   }
-
-  @Patch(':id')
-  @ApiOperation({ summary: '调整健康计划' })
-  update(
-    @Param('id') id: string,
+  @Patch(":id") update(
+    @Param("id", ParseUUIDPipe) id: string,
     @Body() dto: UpdateHealthRecordDto,
-    @CurrentUser() user: CurrentUserPayload,
+    @CurrentUser() u: CurrentUserPayload,
   ) {
-    return this.healthService.update(id, dto, user);
+    return this.service.update(id, dto, u);
   }
-
-  @Delete(':id')
-  @ApiOperation({ summary: '删除健康计划' })
-  remove(@Param('id') id: string, @CurrentUser() user: CurrentUserPayload) {
-    return this.healthService.remove(id, user);
+  @Delete(":id") remove(
+    @Param("id", ParseUUIDPipe) id: string,
+    @CurrentUser() u: CurrentUserPayload,
+  ) {
+    return this.service.remove(id, u);
+  }
+  @Post(":id/measurements") measurement(
+    @Param("id", ParseUUIDPipe) id: string,
+    @Body() dto: MeasurementDto,
+    @CurrentUser() u: CurrentUserPayload,
+  ) {
+    return this.service.measurement(id, dto, u);
+  }
+  @Post(":id/reminders") reminder(
+    @Param("id", ParseUUIDPipe) id: string,
+    @Body() dto: ReminderDto,
+    @CurrentUser() u: CurrentUserPayload,
+  ) {
+    return this.service.reminder(id, dto, u);
+  }
+  @Delete(":id/reminders/:rid") cancel(
+    @Param("id", ParseUUIDPipe) id: string,
+    @Param("rid", ParseUUIDPipe) rid: string,
+    @CurrentUser() u: CurrentUserPayload,
+  ) {
+    return this.service.cancelReminder(id, rid, u);
+  }
+  @Post(":id/assessments") assessment(
+    @Param("id", ParseUUIDPipe) id: string,
+    @Body() dto: AssessmentDto,
+    @CurrentUser() u: CurrentUserPayload,
+  ) {
+    return this.service.assessment(id, dto, u);
+  }
+  @Post(":id/patient-access") access(
+    @Param("id", ParseUUIDPipe) id: string,
+    @CurrentUser() u: CurrentUserPayload,
+  ) {
+    return this.service.createAccess(id, u);
+  }
+  @Delete(":id/patient-access") revoke(
+    @Param("id", ParseUUIDPipe) id: string,
+    @CurrentUser() u: CurrentUserPayload,
+  ) {
+    return this.service.revokeAccess(id, u);
   }
 }

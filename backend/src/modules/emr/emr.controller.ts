@@ -7,54 +7,104 @@ import {
   Param,
   Delete,
   Query,
-} from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
-import { EmrService } from './emr.service';
-import { CreateEmrDto } from './dto/create-emr.dto';
-import { UpdateEmrDto } from './dto/update-emr.dto';
-import { QueryEmrDto } from './dto/query-emr.dto';
+  ParseUUIDPipe,
+} from "@nestjs/common";
+import { ApiTags, ApiBearerAuth } from "@nestjs/swagger";
+import { EmrService } from "./emr.service";
+import { CreateEmrDto } from "./dto/create-emr.dto";
+import { UpdateEmrDto } from "./dto/update-emr.dto";
+import { QueryEmrDto } from "./dto/query-emr.dto";
+import {
+  SubmitEmrDto,
+  ReviewEmrDto,
+  MedicalOrderDto,
+  StopOrderDto,
+} from "./dto/emr-workflow.dto";
 import {
   CurrentUser,
   CurrentUserPayload,
-} from '../../common/decorators/current-user.decorator';
-
-@ApiTags('电子病历')
+} from "../../common/decorators/current-user.decorator";
+import { EMR_TEMPLATES } from "./emr.templates";
+@ApiTags("电子病历")
 @ApiBearerAuth()
-@Controller('api/v1/emr')
+@Controller("api/v1/emr")
 export class EmrController {
-  constructor(private readonly emrService: EmrService) {}
-
-  @Post()
-  @ApiOperation({ summary: '新建病历' })
-  create(@Body() dto: CreateEmrDto, @CurrentUser() user: CurrentUserPayload) {
-    return this.emrService.create(dto, user);
+  constructor(private readonly service: EmrService) {}
+  @Get("templates") templates() {
+    return EMR_TEMPLATES;
   }
-
-  @Get()
-  @ApiOperation({ summary: '病历列表（分页 + 搜索）' })
-  findAll(@Query() query: QueryEmrDto, @CurrentUser() user: CurrentUserPayload) {
-    return this.emrService.findAll(query, user);
+  @Get("reviewers") reviewers(@CurrentUser() u: CurrentUserPayload) {
+    return this.service.reviewers(u);
   }
-
-  @Get(':id')
-  @ApiOperation({ summary: '病历详情' })
-  findOne(@Param('id') id: string, @CurrentUser() user: CurrentUserPayload) {
-    return this.emrService.findOne(id, user);
-  }
-
-  @Patch(':id')
-  @ApiOperation({ summary: '更新病历' })
-  update(
-    @Param('id') id: string,
-    @Body() dto: UpdateEmrDto,
-    @CurrentUser() user: CurrentUserPayload,
+  @Post() create(
+    @Body() dto: CreateEmrDto,
+    @CurrentUser() u: CurrentUserPayload,
   ) {
-    return this.emrService.update(id, dto, user);
+    return this.service.create(dto, u);
   }
-
-  @Delete(':id')
-  @ApiOperation({ summary: '删除病历' })
-  remove(@Param('id') id: string, @CurrentUser() user: CurrentUserPayload) {
-    return this.emrService.remove(id, user);
+  @Get() list(@Query() q: QueryEmrDto, @CurrentUser() u: CurrentUserPayload) {
+    return this.service.findAll(q, u);
+  }
+  @Get(":id") detail(
+    @Param("id", ParseUUIDPipe) id: string,
+    @CurrentUser() u: CurrentUserPayload,
+  ) {
+    return this.service.findOne(id, u);
+  }
+  @Patch(":id") update(
+    @Param("id", ParseUUIDPipe) id: string,
+    @Body() dto: UpdateEmrDto,
+    @CurrentUser() u: CurrentUserPayload,
+  ) {
+    return this.service.update(id, dto, u);
+  }
+  @Delete(":id") remove(
+    @Param("id", ParseUUIDPipe) id: string,
+    @CurrentUser() u: CurrentUserPayload,
+  ) {
+    return this.service.remove(id, u);
+  }
+  @Post(":id/submit") submit(
+    @Param("id", ParseUUIDPipe) id: string,
+    @Body() dto: SubmitEmrDto,
+    @CurrentUser() u: CurrentUserPayload,
+  ) {
+    return this.service.submit(id, dto.reviewer_id, u);
+  }
+  @Post(":id/review") review(
+    @Param("id", ParseUUIDPipe) id: string,
+    @Body() dto: ReviewEmrDto,
+    @CurrentUser() u: CurrentUserPayload,
+  ) {
+    return this.service.review(id, dto, u);
+  }
+  @Post(":id/archive") archive(
+    @Param("id", ParseUUIDPipe) id: string,
+    @CurrentUser() u: CurrentUserPayload,
+  ) {
+    return this.service.archive(id, u);
+  }
+  @Post(":id/orders") order(
+    @Param("id", ParseUUIDPipe) id: string,
+    @Body() dto: MedicalOrderDto,
+    @CurrentUser() u: CurrentUserPayload,
+  ) {
+    return this.service.order(id, dto, u);
+  }
+  @Patch(":id/orders/:orderId") updateOrder(
+    @Param("id", ParseUUIDPipe) id: string,
+    @Param("orderId", ParseUUIDPipe) orderId: string,
+    @Body() dto: MedicalOrderDto,
+    @CurrentUser() u: CurrentUserPayload,
+  ) {
+    return this.service.order(id, dto, u, orderId);
+  }
+  @Post(":id/orders/:orderId/stop") stop(
+    @Param("id", ParseUUIDPipe) id: string,
+    @Param("orderId", ParseUUIDPipe) orderId: string,
+    @Body() dto: StopOrderDto,
+    @CurrentUser() u: CurrentUserPayload,
+  ) {
+    return this.service.stopOrder(id, orderId, dto.reason, u);
   }
 }

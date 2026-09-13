@@ -19,7 +19,7 @@ export interface UserProfile {
   email: string;
   phone: string | null;
   real_name: string | null;
-  gender: '男' | '女' | null;
+  gender: "男" | "女" | null;
   department: string | null;
   title: string | null;
   hospital: string | null;
@@ -33,8 +33,8 @@ export interface TempPermission {
   id: string;
   userId: string;
   resourceId: string;
-  resourceType: 'consultation';
-  permissionType: 'view';
+  resourceType: "consultation";
+  permissionType: "view";
   grantedAt: string;
   expiresAt: string;
   reason: string | null;
@@ -45,12 +45,12 @@ export interface Patient {
   id: string; // uuid
   patient_no: string;
   name: string;
-  gender: '男' | '女';
+  gender: "男" | "女";
   age: number;
   phone: string | null;
   group: string | null;
   symptom: string | null;
-  status: '在管' | '待随访' | '已转出';
+  status: "在管" | "待随访" | "已转出";
   doctor_id: string | null;
   created_at: string;
   updated_at: string;
@@ -61,10 +61,10 @@ export interface Emr {
   emr_no: string;
   patient_id: string;
   patient_name: string;
-  type: '门诊病历' | '住院病历' | '体检报告';
+  type: "门诊病历" | "住院病历" | "体检报告";
   doctor_id: string | null;
   doctor_name: string | null;
-  status: '草稿' | '待审核' | '已归档' | '已退回';
+  status: "草稿" | "待审核" | "已审核" | "已归档" | "已退回";
   diagnosis: string | null;
   content: string | null;
   created_at: string;
@@ -76,10 +76,10 @@ export interface Consultation {
   consultation_no: string;
   patient_id: string;
   patient_name: string;
-  type: '图文' | '视频';
+  type: "图文" | "视频";
   doctor_id: string | null;
   doctor_name: string | null;
-  status: '待接诊' | '进行中' | '已完成';
+  status: "待接诊" | "进行中" | "已完成";
   symptom: string | null;
   advice: string | null;
   attachments?: string | null;
@@ -99,7 +99,7 @@ export interface Conference {
   initiator_id: string | null;
   initiator_name: string | null;
   experts: string[];
-  status: '待会诊' | '进行中' | '已完成';
+  status: "待会诊" | "进行中" | "已完成";
   scheduled_at: string | null;
   summary: string | null;
   created_at: string;
@@ -114,7 +114,7 @@ export interface HealthRecord {
   metrics: string | null;
   device_source?: string | null;
   reminder?: string | null;
-  alert_level: '正常' | '预警' | '异常';
+  alert_level: "正常" | "预警" | "异常";
   doctor_id: string | null;
   created_at: string;
   updated_at: string;
@@ -139,7 +139,7 @@ export interface AuditLog {
   operator_id: string | null;
   action: string;
   target: string | null;
-  result: '成功' | '失败';
+  result: "成功" | "失败";
   ip: string | null;
   created_at: string;
 }
