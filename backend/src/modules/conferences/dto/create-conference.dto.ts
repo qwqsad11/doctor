@@ -1,37 +1,36 @@
-import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { ApiProperty, ApiPropertyOptional } from "@nestjs/swagger";
 import {
+  ArrayMaxSize,
+  ArrayUnique,
   IsArray,
   IsDateString,
   IsOptional,
   IsString,
   IsUUID,
   Length,
-} from 'class-validator';
-
+} from "class-validator";
 export class CreateConferenceDto {
-  @ApiProperty({ description: '会诊主题' })
-  @IsString()
-  @Length(1, 200)
-  topic: string;
-
-  @ApiPropertyOptional({ description: '患者ID' })
-  @IsOptional()
-  @IsUUID()
-  patient_id?: string;
-
-  @ApiPropertyOptional({ description: '参会专家姓名', type: [String] })
+  @ApiProperty() @IsString() @Length(1, 200) topic: string;
+  @ApiPropertyOptional() @IsOptional() @IsUUID() patient_id?: string;
+  @ApiPropertyOptional({ type: [String], description: "邀请的医生账号ID" })
   @IsOptional()
   @IsArray()
-  @IsString({ each: true })
-  experts?: string[];
-
-  @ApiPropertyOptional({ description: '会诊时间' })
+  @ArrayUnique()
+  @ArrayMaxSize(20)
+  @IsUUID("4", { each: true })
+  expert_ids?: string[];
+  // Legacy labels are retained for imported records; labels never grant account access.
+  @ApiPropertyOptional({ type: [String] })
   @IsOptional()
-  @IsDateString()
-  scheduled_at?: string;
-
-  @ApiPropertyOptional({ description: '会诊说明' })
+  @IsArray()
+  @ArrayMaxSize(20)
+  @IsString({ each: true })
+  @Length(1, 100, { each: true })
+  experts?: string[];
+  @ApiPropertyOptional() @IsOptional() @IsDateString() scheduled_at?: string;
+  @ApiPropertyOptional()
   @IsOptional()
   @IsString()
+  @Length(0, 10000)
   summary?: string;
 }

@@ -1,5 +1,5 @@
-import { createSlice, PayloadAction } from '@reduxjs/toolkit';
-import type { UserProfile } from '@/services/types';
+import { createSlice, PayloadAction } from "@reduxjs/toolkit";
+import type { UserProfile } from "@/services/types";
 
 interface UserState {
   id: string | null;
@@ -8,6 +8,8 @@ interface UserState {
   roles: string[];
   avatar: string | null;
   real_name: string | null;
+  department: string | null;
+  title: string | null;
 }
 
 const initialState: UserState = {
@@ -17,10 +19,12 @@ const initialState: UserState = {
   roles: [],
   avatar: null,
   real_name: null,
+  department: null,
+  title: null,
 };
 
 const userSlice = createSlice({
-  name: 'user',
+  name: "user",
   initialState,
   reducers: {
     setUser(state, action: PayloadAction<UserProfile>) {
@@ -30,6 +34,8 @@ const userSlice = createSlice({
       state.roles = action.payload.roles;
       state.avatar = action.payload.avatar;
       state.real_name = action.payload.real_name;
+      state.department = action.payload.department;
+      state.title = action.payload.title;
     },
     clearUser(state) {
       state.id = null;
@@ -38,6 +44,8 @@ const userSlice = createSlice({
       state.roles = [];
       state.avatar = null;
       state.real_name = null;
+      state.department = null;
+      state.title = null;
     },
   },
 });

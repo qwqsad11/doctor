@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState } from "react";
 import {
   Card,
   Row,
@@ -14,19 +14,21 @@ import {
   Tag,
   Modal,
   message,
-} from 'antd';
-import { UserOutlined, UploadOutlined, LockOutlined } from '@ant-design/icons';
-import { useDispatch } from 'react-redux';
-import { usersApi } from '@/services/business';
-import type { UserProfile } from '@/services/types';
-import { setUser } from '@/store/slices/userSlice';
-import { useAuth } from '@/hooks/useAuth';
+} from "antd";
+import { UserOutlined, UploadOutlined, LockOutlined } from "@ant-design/icons";
+import { useDispatch } from "react-redux";
+import { directoryApi, roleLabels } from "@/services/doctor-directory";
+import { usersApi } from "@/services/business";
+import type { UserProfile } from "@/services/types";
+import { setUser } from "@/store/slices/userSlice";
+import { useAuth } from "@/hooks/useAuth";
 
 const ProfilePage: React.FC = () => {
   const { user } = useAuth();
   const dispatch = useDispatch();
   const [form] = Form.useForm();
   const [pwdForm] = Form.useForm();
+  const [departments, setDepartments] = useState<string[]>([]);
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(false);
   const [pwdOpen, setPwdOpen] = useState(false);
@@ -34,11 +36,15 @@ const ProfilePage: React.FC = () => {
 
   const load = async () => {
     try {
-      const p = await usersApi.getMe();
+      const [p, choices] = await Promise.all([
+        usersApi.getMe(),
+        directoryApi.departments(),
+      ]);
+      setDepartments(choices);
       setProfile(p);
       form.setFieldsValue(p);
     } catch (error: any) {
-      message.error(error.response?.data?.message || '加载档案失败');
+      message.error(error.response?.data?.message || "加载档案失败");
     }
   };
 
@@ -54,9 +60,9 @@ const ProfilePage: React.FC = () => {
       const updated = await usersApi.updateMe(values);
       dispatch(setUser(updated));
       setProfile(updated);
-      message.success('档案已更新');
+      message.success("档案已更新");
     } catch (error: any) {
-      message.error(error.response?.data?.message || '保存失败');
+      message.error(error.response?.data?.message || "保存失败");
     } finally {
       setLoading(false);
     }
@@ -70,17 +76,19 @@ const ProfilePage: React.FC = () => {
         old_password: values.old_password,
         new_password: values.new_password,
       });
-      message.success('密码已修改');
+      message.success("密码已修改");
       pwdForm.resetFields();
       setPwdOpen(false);
     } catch (error: any) {
-      message.error(error.response?.data?.message || '修改密码失败');
+      message.error(error.response?.data?.message || "修改密码失败");
     } finally {
       setPwdLoading(false);
     }
   };
 
-  const avatarText = (profile?.real_name || user.username || 'U').slice(0, 1).toUpperCase();
+  const avatarText = (profile?.real_name || user.username || "U")
+    .slice(0, 1)
+    .toUpperCase();
 
   return (
     <div>
@@ -93,24 +101,28 @@ const ProfilePage: React.FC = () => {
       />
       <Card>
         <Row gutter={24} align="middle">
-          <Col flex="160px" style={{ textAlign: 'center' }}>
+          <Col flex="160px" style={{ textAlign: "center" }}>
             <Upload
               showUploadList={false}
               accept="image/*"
               customRequest={async (options: any) => {
                 try {
                   const fd = new FormData();
-                  fd.append('file', options.file);
+                  fd.append("file", options.file);
                   const updated = await usersApi.uploadAvatar(fd);
                   dispatch(setUser(updated));
                   setProfile(updated);
-                  message.success('头像已更新');
+                  message.success("头像已更新");
                 } catch (error: any) {
-                  message.error(error.response?.data?.message || '上传失败');
+                  message.error(error.response?.data?.message || "上传失败");
                 }
               }}
             >
-              <Avatar size={80} src={profile?.avatar || undefined} icon={<UserOutlined />}>
+              <Avatar
+                size={80}
+                src={profile?.avatar || undefined}
+                icon={<UserOutlined />}
+              >
                 {!profile?.avatar ? avatarText : null}
               </Avatar>
               <div style={{ marginTop: 8 }}>
@@ -125,12 +137,14 @@ const ProfilePage: React.FC = () => {
             <Space style={{ marginTop: 8 }}>
               {(user.roles || []).map((r) => (
                 <Tag color="blue" key={r}>
-                  {r === 'admin' ? '管理员' : '医生'}
+                  {roleLabels[r] || r}
                 </Tag>
               ))}
-              <Tag color="green">{profile?.status === 'active' ? '正常' : profile?.status}</Tag>
+              <Tag color="green">
+                {profile?.status === "active" ? "正常" : profile?.status}
+              </Tag>
             </Space>
-            <div style={{ marginTop: 8, color: '#888' }}>
+            <div style={{ marginTop: 8, color: "#888" }}>
               用户名：{profile?.username} · 邮箱：{profile?.email}
             </div>
           </Col>
@@ -151,20 +165,44 @@ const ProfilePage: React.FC = () => {
                   allowClear
                   placeholder="选择性别"
                   options={[
-                    { value: '男', label: '男' },
-                    { value: '女', label: '女' },
+                    { value: "男", label: "男" },
+                    { value: "女", label: "女" },
                   ]}
                 />
               </Form.Item>
             </Col>
             <Col span={12}>
               <Form.Item name="department" label="科室">
-                <Input placeholder="如：心血管内科" />
+                <Select
+                  showSearch
+                  allowClear
+                  placeholder="选择所属科室"
+                  options={departments.map((value) => ({
+                    value,
+                    label: value,
+                  }))}
+                />
               </Form.Item>
             </Col>
             <Col span={12}>
               <Form.Item name="title" label="职称">
-                <Input placeholder="如：主治医师" />
+                <Select
+                  showSearch
+                  allowClear
+                  placeholder="选择职称"
+                  options={[
+                    ...new Set(
+                      [
+                        "医师",
+                        "住院医师",
+                        "主治医师",
+                        "副主任医师",
+                        "主任医师",
+                        profile?.title,
+                      ].filter((v): v is string => !!v),
+                    ),
+                  ].map((value) => ({ value, label: value }))}
+                />
               </Form.Item>
             </Col>
             <Col span={12}>
@@ -176,7 +214,7 @@ const ProfilePage: React.FC = () => {
               <Form.Item
                 name="email"
                 label="邮箱"
-                rules={[{ type: 'email', message: '邮箱格式不正确' }]}
+                rules={[{ type: "email", message: "邮箱格式不正确" }]}
               >
                 <Input />
               </Form.Item>
@@ -217,7 +255,7 @@ const ProfilePage: React.FC = () => {
           <Form.Item
             name="old_password"
             label="当前密码"
-            rules={[{ required: true, message: '请输入当前密码' }]}
+            rules={[{ required: true, message: "请输入当前密码" }]}
           >
             <Input.Password placeholder="当前密码" />
           </Form.Item>
@@ -225,8 +263,8 @@ const ProfilePage: React.FC = () => {
             name="new_password"
             label="新密码"
             rules={[
-              { required: true, message: '请输入新密码' },
-              { min: 6, message: '密码至少6位' },
+              { required: true, message: "请输入新密码" },
+              { min: 6, message: "密码至少6位" },
             ]}
           >
             <Input.Password placeholder="新密码" />
@@ -234,15 +272,15 @@ const ProfilePage: React.FC = () => {
           <Form.Item
             name="confirm"
             label="确认新密码"
-            dependencies={['new_password']}
+            dependencies={["new_password"]}
             rules={[
-              { required: true, message: '请再次输入新密码' },
+              { required: true, message: "请再次输入新密码" },
               ({ getFieldValue }) => ({
                 validator(_, value) {
-                  if (!value || getFieldValue('new_password') === value) {
+                  if (!value || getFieldValue("new_password") === value) {
                     return Promise.resolve();
                   }
-                  return Promise.reject(new Error('两次输入的密码不一致'));
+                  return Promise.reject(new Error("两次输入的密码不一致"));
                 },
               }),
             ]}

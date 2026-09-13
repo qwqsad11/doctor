@@ -24,7 +24,7 @@ async function api(path, { method = 'GET', token, body } = {}) {
 async function main() {
   const { access_token: t } = await api('/auth/login', {
     method: 'POST',
-    body: { username: 'admin', password: 'admin123' },
+    body: { username: 'admin', password: 'admin123', factor: 'email', verification_code: '123456' },
   });
 
   // 1) 清理冒烟测试残留的「测试患者」
@@ -72,8 +72,8 @@ async function main() {
       token: t,
       body: { patient_id: pid[e.name], type: e.type, diagnosis: e.diagnosis },
     });
-    await api(`/emr/${created.id}`, { method: 'PATCH', token: t, body: { status: e.status } });
-    console.log('✓ 病历', created.emr_no, e.name, e.status);
+    // Seed drafts only; audited states must use the real assigned-reviewer workflow.
+    console.log('✓ 病历', created.emr_no, e.name, created.status);
   }
 
   // 5) 在线问诊
@@ -105,7 +105,8 @@ async function main() {
       token: t,
       body: { topic: c.topic, patient_id: pid[c.name], experts: c.experts },
     });
-    await api(`/conferences/${created.id}`, { method: 'PATCH', token: t, body: { status: c.status } });
+    if (c.status !== '待会诊') await api(`/conferences/${created.id}`, { method: 'PATCH', token: t, body: { status: '进行中' } });
+    if (c.status === '已完成') await api(`/conferences/${created.id}`, { method: 'PATCH', token: t, body: { status: '已完成', summary: '历史演示会诊总结' } });
     console.log('✓ 会诊', created.conference_no, c.topic);
   }
 
