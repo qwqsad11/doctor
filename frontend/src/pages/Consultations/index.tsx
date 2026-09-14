@@ -18,6 +18,7 @@ import type { ColumnsType } from 'antd/es/table';
 import { consultationsApi, patientsApi } from '@/services/business';
 import type { Consultation, Patient } from '@/services/types';
 import { formatDateTime } from '@/utils/format';
+import { displayLabel } from '@/utils/labels';
 
 const statusColor: Record<Consultation['status'], string> = {
   进行中: 'blue',
@@ -45,7 +46,7 @@ const ConsultationsPage: React.FC = () => {
       setList(data.list);
       setTotal(data.total);
     } catch (e: any) {
-      message.error(e.response?.data?.message || '加载问诊列表失败');
+      message.error(e.response?.data?.message || 'Failed to load consultations');
     } finally {
       setLoading(false);
     }
@@ -77,26 +78,26 @@ const ConsultationsPage: React.FC = () => {
     const values = await form.validateFields();
     try {
       await consultationsApi.create(values);
-      message.success('问诊已创建');
+      message.success('Consultation created');
       setOpen(false);
       load(page, pageSize, keyword);
     } catch (e: any) {
-      message.error(e.response?.data?.message || '创建失败');
+      message.error(e.response?.data?.message || 'Create failed');
     }
   };
 
   const changeStatus = async (id: string, status: Consultation['status']) => {
     try {
       await consultationsApi.update(id, { status });
-      message.success('状态已更新');
+      message.success('Status updated');
       load(page, pageSize, keyword);
     } catch (e: any) {
-      message.error(e.response?.data?.message || '操作失败');
+      message.error(e.response?.data?.message || 'Operation failed');
     }
   };
 
   const exportRecord = (record: Consultation) => {
-    const blob = new Blob([`问诊记录\n编号：${record.consultation_no}\n患者：${record.patient_name}\n主诉：${record.symptom || '-'}\n医嘱：${record.advice || '-'}`], { type: 'text/plain;charset=utf-8' });
+    const blob = new Blob([`Consultation Record\nID: ${record.consultation_no}\nPatient: ${record.patient_name}\nSymptoms: ${record.symptom || '-'}\nAdvice: ${record.advice || '-'}`], { type: 'text/plain;charset=utf-8' });
     const link = document.createElement('a');
     link.href = URL.createObjectURL(blob);
     link.download = `${record.consultation_no}-record.txt`;
@@ -107,44 +108,44 @@ const ConsultationsPage: React.FC = () => {
   const handleDelete = async (id: string) => {
     try {
       await consultationsApi.remove(id);
-      message.success('问诊已删除');
+      message.success('Consultation deleted');
       load(page, pageSize, keyword);
     } catch (e: any) {
-      message.error(e.response?.data?.message || '删除失败');
+      message.error(e.response?.data?.message || 'Delete failed');
     }
   };
 
   const columns: ColumnsType<Consultation> = [
-    { title: '问诊编号', dataIndex: 'consultation_no', key: 'consultation_no', width: 100 },
-    { title: '患者', dataIndex: 'patient_name', key: 'patient_name' },
+    { title: 'Consultation ID', dataIndex: 'consultation_no', key: 'consultation_no', width: 100 },
+    { title: 'Patient', dataIndex: 'patient_name', key: 'patient_name' },
     {
-      title: '类型',
+      title: 'Type',
       dataIndex: 'type',
       key: 'type',
-      render: (t: Consultation['type']) => <Tag color={t === '视频' ? 'purple' : 'cyan'}>{t}</Tag>,
+      render: (t: Consultation['type']) => <Tag color={t === '视频' ? 'purple' : 'cyan'}>{displayLabel(t)}</Tag>,
     },
-    { title: '医生', dataIndex: 'doctor_name', key: 'doctor_name', render: (d: string | null) => d || '-' },
+    { title: 'Doctor', dataIndex: 'doctor_name', key: 'doctor_name', render: (d: string | null) => d || '-' },
     {
-      title: '状态',
+      title: 'Status',
       dataIndex: 'status',
       key: 'status',
-      render: (s: Consultation['status']) => <Tag color={statusColor[s]}>{s}</Tag>,
+      render: (s: Consultation['status']) => <Tag color={statusColor[s]}>{displayLabel(s)}</Tag>,
     },
-    { title: '创建时间', dataIndex: 'created_at', key: 'created_at', render: formatDateTime },
+    { title: 'Created', dataIndex: 'created_at', key: 'created_at', render: formatDateTime },
     {
-      title: '操作',
+      title: 'Actions',
       key: 'action',
       render: (_, record) => (
         <Space>
           {record.status === '待接诊' && (
-            <Button type="link" size="small" onClick={() => changeStatus(record.id, '进行中')}>接诊</Button>
+            <Button type="link" size="small" onClick={() => changeStatus(record.id, '进行中')}>Accept</Button>
           )}
           {record.status === '进行中' && (
-            <Button type="link" size="small" onClick={() => changeStatus(record.id, '已完成')}>完成</Button>
+            <Button type="link" size="small" onClick={() => changeStatus(record.id, '已完成')}>Complete</Button>
           )}
-          <Button type="link" size="small" onClick={() => setDetail(record)}>查看记录</Button>
-          <Popconfirm title="确认删除？" onConfirm={() => handleDelete(record.id)}>
-            <Button type="link" size="small" danger>删除</Button>
+          <Button type="link" size="small" onClick={() => setDetail(record)}>View record</Button>
+          <Popconfirm title="Delete this consultation?" onConfirm={() => handleDelete(record.id)}>
+            <Button type="link" size="small" danger>Delete</Button>
           </Popconfirm>
         </Space>
       ),
@@ -152,10 +153,10 @@ const ConsultationsPage: React.FC = () => {
   ];
 
   return (
-    <Card title="在线问诊">
+    <Card title="Online Consultations">
       <Space style={{ marginBottom: 16 }} wrap>
         <Input
-          placeholder="按患者 / 问诊编号搜索"
+          placeholder="Search by patient or consultation ID"
           prefix={<SearchOutlined />}
           allowClear
           value={keyword}
@@ -163,8 +164,8 @@ const ConsultationsPage: React.FC = () => {
           onPressEnter={handleSearch}
           style={{ width: 260 }}
         />
-        <Button onClick={handleSearch}>查询</Button>
-        <Button type="primary" icon={<PlusOutlined />} onClick={openCreate}>新建问诊</Button>
+        <Button onClick={handleSearch}>Search</Button>
+        <Button type="primary" icon={<PlusOutlined />} onClick={openCreate}>Create consultation</Button>
       </Space>
 
       <Table
@@ -177,7 +178,7 @@ const ConsultationsPage: React.FC = () => {
           pageSize,
           total,
           showSizeChanger: true,
-          showTotal: (t) => `共 ${t} 条`,
+          showTotal: (t) => `${t} total`,
           onChange: (p, ps) => {
             setPage(p);
             setPageSize(ps);
@@ -186,58 +187,57 @@ const ConsultationsPage: React.FC = () => {
       />
 
       <Modal
-        title="新建问诊"
+        title="Create Consultation"
         open={open}
         onOk={handleSubmit}
         onCancel={() => setOpen(false)}
-        okText="创建"
-        cancelText="取消"
+        okText="Create"
+        cancelText="Cancel"
         destroyOnClose
       >
         <Form form={form} layout="vertical" initialValues={{ type: '图文' }}>
-          <Form.Item name="patient_id" label="患者" rules={[{ required: true, message: '请选择患者' }]}>
+          <Form.Item name="patient_id" label="Patient" rules={[{ required: true, message: 'Select a patient' }]}>
             <Select
               showSearch
               optionFilterProp="label"
-              placeholder="选择患者"
+              placeholder="Select a patient"
               options={patients.map((p) => ({ value: p.id, label: `${p.name}（${p.patient_no}）` }))}
             />
           </Form.Item>
-          <Form.Item name="type" label="问诊类型" rules={[{ required: true }]}>
+          <Form.Item name="type" label="Consultation Type" rules={[{ required: true }]}>
             <Select
               options={[
-                { value: '图文', label: '图文' },
-                { value: '视频', label: '视频' },
+                { value: '图文', label: 'Text and Image' }, { value: '视频', label: 'Video' },
               ]}
             />
           </Form.Item>
-          <Form.Item name="symptom" label="主诉">
-            <Input.TextArea rows={3} placeholder="如：反复头晕三天" />
+          <Form.Item name="symptom" label="Symptoms">
+            <Input.TextArea rows={3} placeholder="Example: recurrent dizziness for three days" />
           </Form.Item>
-          <Form.Item name="attachments" label="图片/附件说明（本地模拟）">
-            <Input placeholder="如：blood-pressure-photo.jpg" />
+          <Form.Item name="attachments" label="Image/Attachment Notes (Local Demo)">
+            <Input placeholder="Example: blood-pressure-photo.jpg" />
           </Form.Item>
         </Form>
       </Modal>
 
       <Modal
-        title="问诊记录"
+        title="Consultation Record"
         open={!!detail}
         onCancel={() => setDetail(null)}
-        footer={detail ? <Space><Button onClick={() => exportRecord(detail)}>导出文本记录</Button><Button onClick={() => setDetail(null)}>关闭</Button></Space> : null}
+        footer={detail ? <Space><Button onClick={() => exportRecord(detail)}>Export text record</Button><Button onClick={() => setDetail(null)}>Close</Button></Space> : null}
       >
         {detail && (
           <Descriptions column={1} bordered size="small">
-            <Descriptions.Item label="问诊编号">{detail.consultation_no}</Descriptions.Item>
-            <Descriptions.Item label="患者">{detail.patient_name}</Descriptions.Item>
-            <Descriptions.Item label="医生">{detail.doctor_name || '-'}</Descriptions.Item>
-            <Descriptions.Item label="类型">{detail.type}</Descriptions.Item>
-            <Descriptions.Item label="状态">{detail.status}</Descriptions.Item>
-            <Descriptions.Item label="主诉">{detail.symptom || '-'}</Descriptions.Item>
-            <Descriptions.Item label="医嘱">{detail.advice || '-'}</Descriptions.Item>
-            <Descriptions.Item label="附件">{detail.attachments || '-'}</Descriptions.Item>
-            <Descriptions.Item label="视频">{detail.type === '视频' ? '本地模拟视频房间，可记录状态和报告，不连接真实视频服务' : '-'}</Descriptions.Item>
-            <Descriptions.Item label="创建时间">{formatDateTime(detail.created_at)}</Descriptions.Item>
+            <Descriptions.Item label="Consultation ID">{detail.consultation_no}</Descriptions.Item>
+            <Descriptions.Item label="Patient">{detail.patient_name}</Descriptions.Item>
+            <Descriptions.Item label="Doctor">{detail.doctor_name || '-'}</Descriptions.Item>
+            <Descriptions.Item label="Type">{displayLabel(detail.type)}</Descriptions.Item>
+            <Descriptions.Item label="Status">{displayLabel(detail.status)}</Descriptions.Item>
+            <Descriptions.Item label="Symptoms">{detail.symptom || '-'}</Descriptions.Item>
+            <Descriptions.Item label="Advice">{detail.advice || '-'}</Descriptions.Item>
+            <Descriptions.Item label="Attachments">{detail.attachments || '-'}</Descriptions.Item>
+            <Descriptions.Item label="Video">{detail.type === '视频' ? 'Local demo video room. It records status and reports but does not connect to a real video service.' : '-'}</Descriptions.Item>
+            <Descriptions.Item label="Created">{formatDateTime(detail.created_at)}</Descriptions.Item>
           </Descriptions>
         )}
       </Modal>

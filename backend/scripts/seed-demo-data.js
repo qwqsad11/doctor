@@ -24,7 +24,12 @@ async function api(path, { method = 'GET', token, body } = {}) {
 async function main() {
   const { access_token: t } = await api('/auth/login', {
     method: 'POST',
-    body: { username: 'admin', password: 'admin123' },
+    body: {
+      username: 'admin',
+      password: 'admin123',
+      factor: 'email',
+      verification_code: '123456',
+    },
   });
 
   // 1) 清理冒烟测试残留的「测试患者」

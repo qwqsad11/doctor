@@ -23,16 +23,16 @@ const LoginPage: React.FC = () => {
       const response = await authService.login(values);
       if (response.mfa_required) {
         setMfaRequired(true);
-        message.info(response.demo_note || '请选择验证方式');
+        message.info(response.demo_note || 'Select a verification method');
         return;
       }
-      if (!response.access_token || !response.user) throw new Error('登录响应不完整');
+      if (!response.access_token || !response.user) throw new Error('Incomplete login response');
       dispatch(loginSuccess(response.access_token));
       dispatch(setUser(response.user));
-      message.success('登录成功');
+      message.success('Signed in successfully');
       navigate('/dashboard');
     } catch (error: any) {
-      const errorMsg = error.response?.data?.message || '登录失败';
+      const errorMsg = error.response?.data?.message || 'Sign-in failed';
       dispatch(loginFailure(errorMsg));
       message.error(errorMsg);
     } finally {
@@ -45,41 +45,41 @@ const LoginPage: React.FC = () => {
       <Card className="login-card" bordered={false}>
         <Space direction="vertical" size="large" style={{ width: '100%' }}>
           <div className="login-header">
-            <h1>医生服务系统</h1>
-            <p>智慧医养大数据公共服务平台</p>
+            <h1>Doctor Services</h1>
+            <p>Smart Healthcare and Elderly Care Data Platform</p>
           </div>
 
           <Form form={form} layout="vertical" onFinish={onFinish} size="large">
             <Form.Item
               name="username"
               rules={[
-                { required: true, message: '请输入用户名' },
-                { min: 3, message: '用户名至少3个字符' },
+                { required: true, message: 'Enter a username' },
+                { min: 3, message: 'Username must be at least 3 characters' },
               ]}
             >
               <Input
-                placeholder="用户名"
+                placeholder="Username"
                 prefix={<UserOutlined />}
                 disabled={loading}
               />
             </Form.Item>
 
             {mfaRequired && <>
-              <Alert type="info" showIcon message="本地多因素演示" description="短信/邮箱演示码：123456；人脸模拟口令：FACE-DEMO。不会调用任何外部服务。" style={{ marginBottom: 16 }} />
+              <Alert type="info" showIcon message="Local multi-factor demo" description="SMS/email demo code: 123456; face demo passphrase: FACE-DEMO. No external services are used." style={{ marginBottom: 16 }} />
               <Form.Item name="factor" initialValue="sms" rules={[{ required: true }]}>
-                <Radio.Group options={[{ value: 'sms', label: '模拟短信' }, { value: 'email', label: '模拟邮箱验证' }, { value: 'face', label: '模拟人脸' }]} />
+                <Radio.Group options={[{ value: 'sms', label: 'Demo SMS' }, { value: 'email', label: 'Demo email verification' }, { value: 'face', label: 'Demo face verification' }]} />
               </Form.Item>
-              <Form.Item name="verification_code" rules={[{ required: true, message: '请输入演示验证码或人脸口令' }]}>
-                <Input placeholder="验证码 / FACE-DEMO" disabled={loading} />
+              <Form.Item name="verification_code" rules={[{ required: true, message: 'Enter the demo verification code or face passphrase' }]}>
+                <Input placeholder="Verification code / FACE-DEMO" disabled={loading} />
               </Form.Item>
             </>}
 
             <Form.Item
               name="password"
-              rules={[{ required: true, message: '请输入密码' }]}
+              rules={[{ required: true, message: 'Enter a password' }]}
             >
               <Input.Password
-                placeholder="密码"
+                placeholder="Password"
                 prefix={<LockOutlined />}
                 disabled={loading}
               />
@@ -93,16 +93,16 @@ const LoginPage: React.FC = () => {
                 size="large"
                 loading={loading}
               >
-                {loading ? <Spin /> : '登录'}
+                {loading ? <Spin /> : 'Sign in'}
               </Button>
             </Form.Item>
           </Form>
 
           <div className="login-footer">
             <p>
-              没有账号？<Link to="/register">去注册</Link>
+              No account? <Link to="/register">Register</Link>
             </p>
-            <p>© 2026 医生服务系统 v0.1.0</p>
+            <p>© 2026 Doctor Services v0.1.0</p>
           </div>
         </Space>
       </Card>

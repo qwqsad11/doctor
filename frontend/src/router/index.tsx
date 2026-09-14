@@ -45,7 +45,7 @@ const Router: React.FC = () => {
             minHeight: '100vh',
           }}
         >
-          加载中...
+          Loading...
         </div>
       }
     >

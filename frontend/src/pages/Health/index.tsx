@@ -18,6 +18,7 @@ import type { ColumnsType } from 'antd/es/table';
 import { healthApi, patientsApi } from '@/services/business';
 import type { HealthRecord, Patient } from '@/services/types';
 import { formatDateTime } from '@/utils/format';
+import { displayLabel } from '@/utils/labels';
 
 const alertColor: Record<HealthRecord['alert_level'], string> = {
   正常: 'green',
@@ -26,9 +27,7 @@ const alertColor: Record<HealthRecord['alert_level'], string> = {
 };
 
 const levelOptions = [
-  { value: '正常', label: '正常' },
-  { value: '预警', label: '预警' },
-  { value: '异常', label: '异常' },
+  { value: '正常', label: 'Normal' }, { value: '预警', label: 'Warning' }, { value: '异常', label: 'Abnormal' },
 ];
 
 const HealthPage: React.FC = () => {
@@ -54,7 +53,7 @@ const HealthPage: React.FC = () => {
         setList(data.list);
         setTotal(data.total);
       } catch (e: any) {
-        message.error(e.response?.data?.message || '加载健康计划失败');
+        message.error(e.response?.data?.message || 'Failed to load health plans');
       } finally {
         setLoading(false);
       }
@@ -109,48 +108,48 @@ const HealthPage: React.FC = () => {
     try {
       if (editing) {
         await healthApi.update(editing.id, values);
-        message.success('计划已更新');
+        message.success('Plan updated');
       } else {
         await healthApi.create(values);
-        message.success('计划已制定');
+        message.success('Plan created');
       }
       setOpen(false);
       load(page, pageSize, keyword, level);
     } catch (e: any) {
-      message.error(e.response?.data?.message || '保存失败');
+      message.error(e.response?.data?.message || 'Save failed');
     }
   };
 
   const handleDelete = async (id: string) => {
     try {
       await healthApi.remove(id);
-      message.success('计划已删除');
+      message.success('Plan deleted');
       load(page, pageSize, keyword, level);
     } catch (e: any) {
-      message.error(e.response?.data?.message || '删除失败');
+      message.error(e.response?.data?.message || 'Delete failed');
     }
   };
 
   const columns: ColumnsType<HealthRecord> = [
-    { title: '患者', dataIndex: 'patient_name', key: 'patient_name' },
-    { title: '健康计划', dataIndex: 'plan', key: 'plan' },
-    { title: '最新指标', dataIndex: 'metrics', key: 'metrics', render: (v: string | null) => v || '-' },
+    { title: 'Patient', dataIndex: 'patient_name', key: 'patient_name' },
+    { title: 'Health Plan', dataIndex: 'plan', key: 'plan' },
+    { title: 'Latest Metrics', dataIndex: 'metrics', key: 'metrics', render: (v: string | null) => v || '-' },
     {
-      title: '预警等级',
+      title: 'Alert Level',
       dataIndex: 'alert_level',
       key: 'alert_level',
-      render: (a: HealthRecord['alert_level']) => <Tag color={alertColor[a]}>{a}</Tag>,
+      render: (a: HealthRecord['alert_level']) => <Tag color={alertColor[a]}>{displayLabel(a)}</Tag>,
     },
-    { title: '更新时间', dataIndex: 'updated_at', key: 'updated_at', render: formatDateTime },
+    { title: 'Updated', dataIndex: 'updated_at', key: 'updated_at', render: formatDateTime },
     {
-      title: '操作',
+      title: 'Actions',
       key: 'action',
       render: (_, record) => (
         <Space>
-          <Button type="link" size="small" onClick={() => setDetail(record)}>查看数据</Button>
-          <Button type="link" size="small" onClick={() => openEdit(record)}>调整计划</Button>
-          <Popconfirm title="确认删除？" onConfirm={() => handleDelete(record.id)}>
-            <Button type="link" size="small" danger>删除</Button>
+          <Button type="link" size="small" onClick={() => setDetail(record)}>View data</Button>
+          <Button type="link" size="small" onClick={() => openEdit(record)}>Adjust plan</Button>
+          <Popconfirm title="Delete this health plan?" onConfirm={() => handleDelete(record.id)}>
+            <Button type="link" size="small" danger>Delete</Button>
           </Popconfirm>
         </Space>
       ),
@@ -158,10 +157,10 @@ const HealthPage: React.FC = () => {
   ];
 
   return (
-    <Card title="健康管理">
+    <Card title="Health Management">
       <Space style={{ marginBottom: 16 }} wrap>
         <Input
-          placeholder="按患者搜索"
+          placeholder="Search by patient"
           prefix={<SearchOutlined />}
           allowClear
           value={keyword}
@@ -170,7 +169,7 @@ const HealthPage: React.FC = () => {
           style={{ width: 260 }}
         />
         <Select
-          placeholder="预警等级"
+          placeholder="Alert level"
           allowClear
           style={{ width: 140 }}
           options={levelOptions}
@@ -180,8 +179,8 @@ const HealthPage: React.FC = () => {
             setPage(1);
           }}
         />
-        <Button onClick={handleSearch}>查询</Button>
-        <Button type="primary" icon={<PlusOutlined />} onClick={openCreate}>制定健康计划</Button>
+        <Button onClick={handleSearch}>Search</Button>
+        <Button type="primary" icon={<PlusOutlined />} onClick={openCreate}>Create health plan</Button>
       </Space>
 
       <Table
@@ -194,7 +193,7 @@ const HealthPage: React.FC = () => {
           pageSize,
           total,
           showSizeChanger: true,
-          showTotal: (t) => `共 ${t} 条`,
+          showTotal: (t) => `${t} total`,
           onChange: (p, ps) => {
             setPage(p);
             setPageSize(ps);
@@ -203,56 +202,56 @@ const HealthPage: React.FC = () => {
       />
 
       <Modal
-        title={editing ? '调整健康计划' : '制定健康计划'}
+        title={editing ? 'Adjust Health Plan' : 'Create Health Plan'}
         open={open}
         onOk={handleSubmit}
         onCancel={() => setOpen(false)}
-        okText="保存"
-        cancelText="取消"
+        okText="Save"
+        cancelText="Cancel"
         destroyOnClose
       >
         <Form form={form} layout="vertical" initialValues={{ alert_level: '正常' }}>
-          <Form.Item name="patient_id" label="患者" rules={[{ required: true, message: '请选择患者' }]}>
+          <Form.Item name="patient_id" label="Patient" rules={[{ required: true, message: 'Select a patient' }]}>
             <Select
               showSearch
               optionFilterProp="label"
-              placeholder="选择患者"
+              placeholder="Select a patient"
               options={patients.map((p) => ({ value: p.id, label: `${p.name}（${p.patient_no}）` }))}
             />
           </Form.Item>
-          <Form.Item name="plan" label="健康计划" rules={[{ required: true, message: '请输入计划' }]}>
-            <Input placeholder="如：高血压控制计划" />
+          <Form.Item name="plan" label="Health Plan" rules={[{ required: true, message: 'Enter a plan' }]}>
+            <Input placeholder="Example: hypertension control plan" />
           </Form.Item>
-          <Form.Item name="metrics" label="最新指标">
-            <Input placeholder="如：血压 145/92" />
+          <Form.Item name="metrics" label="Latest Metrics">
+            <Input placeholder="Example: blood pressure 145/92" />
           </Form.Item>
-          <Form.Item name="device_source" label="设备来源（模拟）">
-            <Input placeholder="如：家用血压计（本地录入）" />
+          <Form.Item name="device_source" label="Device Source (Demo)">
+            <Input placeholder="Example: home blood pressure monitor (local entry)" />
           </Form.Item>
-          <Form.Item name="reminder" label="提醒规则（本地模拟）">
-            <Input placeholder="如：每日 08:00 服药提醒" />
+          <Form.Item name="reminder" label="Reminder Rule (Local Demo)">
+            <Input placeholder="Example: medication reminder at 08:00 daily" />
           </Form.Item>
-          <Form.Item name="alert_level" label="预警等级">
+          <Form.Item name="alert_level" label="Alert Level">
             <Select options={levelOptions} />
           </Form.Item>
         </Form>
       </Modal>
 
       <Modal
-        title="健康数据"
+        title="Health Data"
         open={!!detail}
         onCancel={() => setDetail(null)}
-        footer={<Button onClick={() => setDetail(null)}>关闭</Button>}
+        footer={<Button onClick={() => setDetail(null)}>Close</Button>}
       >
         {detail && (
           <Descriptions column={1} bordered size="small">
-            <Descriptions.Item label="患者">{detail.patient_name}</Descriptions.Item>
-            <Descriptions.Item label="健康计划">{detail.plan}</Descriptions.Item>
-            <Descriptions.Item label="最新指标">{detail.metrics || '-'}</Descriptions.Item>
-            <Descriptions.Item label="设备来源">{detail.device_source || '手工/本地模拟'}</Descriptions.Item>
-            <Descriptions.Item label="提醒规则">{detail.reminder || '-'}</Descriptions.Item>
-            <Descriptions.Item label="预警等级">{detail.alert_level}</Descriptions.Item>
-            <Descriptions.Item label="更新时间">{formatDateTime(detail.updated_at)}</Descriptions.Item>
+            <Descriptions.Item label="Patient">{detail.patient_name}</Descriptions.Item>
+            <Descriptions.Item label="Health Plan">{detail.plan}</Descriptions.Item>
+            <Descriptions.Item label="Latest Metrics">{detail.metrics || '-'}</Descriptions.Item>
+            <Descriptions.Item label="Device Source">{detail.device_source || 'Manual/local demo'}</Descriptions.Item>
+            <Descriptions.Item label="Reminder Rule">{detail.reminder || '-'}</Descriptions.Item>
+            <Descriptions.Item label="Alert Level">{displayLabel(detail.alert_level)}</Descriptions.Item>
+            <Descriptions.Item label="Updated">{formatDateTime(detail.updated_at)}</Descriptions.Item>
           </Descriptions>
         )}
       </Modal>

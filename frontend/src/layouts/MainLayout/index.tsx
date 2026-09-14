@@ -33,14 +33,14 @@ interface MenuEntry {
 }
 
 const MENU_ITEMS: MenuEntry[] = [
-  { key: '/dashboard', icon: <DashboardOutlined />, label: '工作台' },
-  { key: '/patients', icon: <TeamOutlined />, label: '患者管理' },
-  { key: '/consultations', icon: <MessageOutlined />, label: '在线问诊' },
-  { key: '/emr', icon: <FileTextOutlined />, label: '电子病历' },
-  { key: '/conferences', icon: <VideoCameraOutlined />, label: '远程会诊' },
-  { key: '/health', icon: <HeartOutlined />, label: '健康管理' },
-  { key: '/social', icon: <ShareAltOutlined />, label: '医生社交' },
-  { key: '/audit', icon: <AuditOutlined />, label: '操作审计' },
+  { key: '/dashboard', icon: <DashboardOutlined />, label: 'Dashboard' },
+  { key: '/patients', icon: <TeamOutlined />, label: 'Patients' },
+  { key: '/consultations', icon: <MessageOutlined />, label: 'Consultations' },
+  { key: '/emr', icon: <FileTextOutlined />, label: 'Medical Records' },
+  { key: '/conferences', icon: <VideoCameraOutlined />, label: 'Conferences' },
+  { key: '/health', icon: <HeartOutlined />, label: 'Health Management' },
+  { key: '/social', icon: <ShareAltOutlined />, label: 'Doctor Community' },
+  { key: '/audit', icon: <AuditOutlined />, label: 'Audit Log' },
 ];
 
 const MainLayout: React.FC = () => {
@@ -58,7 +58,7 @@ const MainLayout: React.FC = () => {
   }, [dispatch, isAuthenticated, user.id]);
 
   const menuItems = user.roles?.includes('admin')
-    ? [...MENU_ITEMS, { key: '/admin', icon: <SettingOutlined />, label: '管理授权' }]
+    ? [...MENU_ITEMS, { key: '/admin', icon: <SettingOutlined />, label: 'Access Management' }]
     : MENU_ITEMS;
   const titles = Object.fromEntries(menuItems.map((m) => [m.key, m.label]));
 
@@ -77,12 +77,12 @@ const MainLayout: React.FC = () => {
     {
       key: 'profile',
       icon: <UserOutlined />,
-      label: '个人档案',
+      label: 'Profile',
     },
     {
       key: 'logout',
       icon: <LogoutOutlined />,
-      label: '退出登录',
+      label: 'Sign out',
     },
   ];
 
@@ -106,7 +106,7 @@ const MainLayout: React.FC = () => {
       >
         <div className="main-logo">
           <span className="main-logo-icon">🏥</span>
-          {!collapsed && <span className="main-logo-text">医生服务系统</span>}
+          {!collapsed && <span className="main-logo-text">Doctor Services</span>}
         </div>
         <Menu
           theme="dark"
@@ -126,13 +126,13 @@ const MainLayout: React.FC = () => {
             >
               {collapsed ? <MenuUnfoldOutlined /> : <MenuFoldOutlined />}
             </span>
-            <span className="main-breadcrumb">{titles[selectedKey] ?? '工作台'}</span>
+            <span className="main-breadcrumb">{titles[selectedKey] ?? 'Dashboard'}</span>
           </Space>
 
           <Dropdown menu={{ items: userMenuItems, onClick: onUserMenuClick }}>
             <Space className="main-user">
               <Avatar size="small" src={user.avatar || undefined} icon={<UserOutlined />} />
-              <span>{user.real_name || user.username || '未登录'}</span>
+              <span>{user.real_name || user.username || 'Not signed in'}</span>
             </Space>
           </Dropdown>
         </Header>

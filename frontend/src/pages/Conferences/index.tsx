@@ -18,6 +18,7 @@ import type { ColumnsType } from 'antd/es/table';
 import { conferencesApi, patientsApi } from '@/services/business';
 import type { Conference, Patient } from '@/services/types';
 import { formatDateTime } from '@/utils/format';
+import { displayLabel } from '@/utils/labels';
 
 const statusColor: Record<Conference['status'], string> = {
   待会诊: 'orange',
@@ -45,7 +46,7 @@ const ConferencesPage: React.FC = () => {
       setList(data.list);
       setTotal(data.total);
     } catch (e: any) {
-      message.error(e.response?.data?.message || '加载会诊列表失败');
+      message.error(e.response?.data?.message || 'Failed to load conferences');
     } finally {
       setLoading(false);
     }
@@ -76,41 +77,41 @@ const ConferencesPage: React.FC = () => {
     const values = await form.validateFields();
     try {
       await conferencesApi.create(values);
-      message.success('会诊已发起');
+      message.success('Conference started');
       setOpen(false);
       load(page, pageSize, keyword);
     } catch (e: any) {
-      message.error(e.response?.data?.message || '发起失败');
+      message.error(e.response?.data?.message || 'Failed to start conference');
     }
   };
 
   const changeStatus = async (id: string, status: Conference['status']) => {
     try {
       await conferencesApi.update(id, { status });
-      message.success('状态已更新');
+      message.success('Status updated');
       load(page, pageSize, keyword);
     } catch (e: any) {
-      message.error(e.response?.data?.message || '操作失败');
+      message.error(e.response?.data?.message || 'Operation failed');
     }
   };
 
   const handleDelete = async (id: string) => {
     try {
       await conferencesApi.remove(id);
-      message.success('会诊已删除');
+      message.success('Conference deleted');
       load(page, pageSize, keyword);
     } catch (e: any) {
-      message.error(e.response?.data?.message || '删除失败');
+      message.error(e.response?.data?.message || 'Delete failed');
     }
   };
 
   const columns: ColumnsType<Conference> = [
-    { title: '会诊编号', dataIndex: 'conference_no', key: 'conference_no', width: 100 },
-    { title: '会诊主题', dataIndex: 'topic', key: 'topic' },
-    { title: '患者', dataIndex: 'patient_name', key: 'patient_name', render: (v: string | null) => v || '-' },
-    { title: '发起人', dataIndex: 'initiator_name', key: 'initiator_name', render: (v: string | null) => v || '-' },
+    { title: 'Conference ID', dataIndex: 'conference_no', key: 'conference_no', width: 100 },
+    { title: 'Topic', dataIndex: 'topic', key: 'topic' },
+    { title: 'Patient', dataIndex: 'patient_name', key: 'patient_name', render: (v: string | null) => v || '-' },
+    { title: 'Initiator', dataIndex: 'initiator_name', key: 'initiator_name', render: (v: string | null) => v || '-' },
     {
-      title: '参会专家',
+      title: 'Experts',
       dataIndex: 'experts',
       key: 'experts',
       render: (experts: string[]) => (
@@ -122,26 +123,26 @@ const ConferencesPage: React.FC = () => {
       ),
     },
     {
-      title: '状态',
+      title: 'Status',
       dataIndex: 'status',
       key: 'status',
-      render: (s: Conference['status']) => <Tag color={statusColor[s]}>{s}</Tag>,
+      render: (s: Conference['status']) => <Tag color={statusColor[s]}>{displayLabel(s)}</Tag>,
     },
-    { title: '发起时间', dataIndex: 'created_at', key: 'created_at', render: formatDateTime },
+    { title: 'Created', dataIndex: 'created_at', key: 'created_at', render: formatDateTime },
     {
-      title: '操作',
+      title: 'Actions',
       key: 'action',
       render: (_, record) => (
         <Space>
           {record.status === '待会诊' && (
-            <Button type="link" size="small" onClick={() => changeStatus(record.id, '进行中')}>进入会诊</Button>
+            <Button type="link" size="small" onClick={() => changeStatus(record.id, '进行中')}>Join conference</Button>
           )}
           {record.status === '进行中' && (
-            <Button type="link" size="small" onClick={() => changeStatus(record.id, '已完成')}>完成</Button>
+            <Button type="link" size="small" onClick={() => changeStatus(record.id, '已完成')}>Complete</Button>
           )}
-          <Button type="link" size="small" onClick={() => setDetail(record)}>查看报告</Button>
-          <Popconfirm title="确认删除？" onConfirm={() => handleDelete(record.id)}>
-            <Button type="link" size="small" danger>删除</Button>
+          <Button type="link" size="small" onClick={() => setDetail(record)}>View report</Button>
+          <Popconfirm title="Delete this conference?" onConfirm={() => handleDelete(record.id)}>
+            <Button type="link" size="small" danger>Delete</Button>
           </Popconfirm>
         </Space>
       ),
@@ -149,10 +150,10 @@ const ConferencesPage: React.FC = () => {
   ];
 
   return (
-    <Card title="远程会诊">
+    <Card title="Remote Conferences">
       <Space style={{ marginBottom: 16 }} wrap>
         <Input
-          placeholder="按患者 / 主题搜索"
+          placeholder="Search by patient or topic"
           prefix={<SearchOutlined />}
           allowClear
           value={keyword}
@@ -160,8 +161,8 @@ const ConferencesPage: React.FC = () => {
           onPressEnter={handleSearch}
           style={{ width: 260 }}
         />
-        <Button onClick={handleSearch}>查询</Button>
-        <Button type="primary" icon={<PlusOutlined />} onClick={openCreate}>发起会诊</Button>
+        <Button onClick={handleSearch}>Search</Button>
+        <Button type="primary" icon={<PlusOutlined />} onClick={openCreate}>Start conference</Button>
       </Space>
 
       <Table
@@ -174,7 +175,7 @@ const ConferencesPage: React.FC = () => {
           pageSize,
           total,
           showSizeChanger: true,
-          showTotal: (t) => `共 ${t} 条`,
+          showTotal: (t) => `${t} total`,
           onChange: (p, ps) => {
             setPage(p);
             setPageSize(ps);
@@ -183,51 +184,51 @@ const ConferencesPage: React.FC = () => {
       />
 
       <Modal
-        title="发起会诊"
+        title="Start conference"
         open={open}
         onOk={handleSubmit}
         onCancel={() => setOpen(false)}
-        okText="发起"
-        cancelText="取消"
+        okText="Start"
+        cancelText="Cancel"
         destroyOnClose
       >
         <Form form={form} layout="vertical">
-          <Form.Item name="topic" label="会诊主题" rules={[{ required: true, message: '请输入主题' }]}>
-            <Input placeholder="如：张伟高血压疑难病例会诊" />
+          <Form.Item name="topic" label="Topic" rules={[{ required: true, message: 'Enter a topic' }]}>
+            <Input placeholder="Example: difficult hypertension case" />
           </Form.Item>
-          <Form.Item name="patient_id" label="患者">
+          <Form.Item name="patient_id" label="Patient">
             <Select
               showSearch
               allowClear
               optionFilterProp="label"
-              placeholder="选择患者（可选）"
+              placeholder="Select a patient (optional)"
               options={patients.map((p) => ({ value: p.id, label: `${p.name}（${p.patient_no}）` }))}
             />
           </Form.Item>
-          <Form.Item name="experts" label="参会专家">
-            <Select mode="tags" placeholder="输入专家姓名后回车" open={false} />
+          <Form.Item name="experts" label="Experts">
+            <Select mode="tags" placeholder="Enter an expert name and press Enter" open={false} />
           </Form.Item>
-          <Form.Item name="summary" label="会诊说明">
-            <Input.TextArea rows={3} placeholder="会诊目的、病情摘要等" />
+          <Form.Item name="summary" label="Notes">
+            <Input.TextArea rows={3} placeholder="Purpose, case summary, and more" />
           </Form.Item>
         </Form>
       </Modal>
 
       <Modal
-        title="会诊详情"
+        title="Conference details"
         open={!!detail}
         onCancel={() => setDetail(null)}
-        footer={<Button onClick={() => setDetail(null)}>关闭</Button>}
+        footer={<Button onClick={() => setDetail(null)}>Close</Button>}
       >
         {detail && (
           <Descriptions column={1} bordered size="small">
-            <Descriptions.Item label="会诊编号">{detail.conference_no}</Descriptions.Item>
-            <Descriptions.Item label="主题">{detail.topic}</Descriptions.Item>
-            <Descriptions.Item label="患者">{detail.patient_name || '-'}</Descriptions.Item>
-            <Descriptions.Item label="发起人">{detail.initiator_name || '-'}</Descriptions.Item>
-            <Descriptions.Item label="参会专家">{(detail.experts || []).join('、') || '-'}</Descriptions.Item>
-            <Descriptions.Item label="状态">{detail.status}</Descriptions.Item>
-            <Descriptions.Item label="说明">{detail.summary || '-'}</Descriptions.Item>
+            <Descriptions.Item label="Conference ID">{detail.conference_no}</Descriptions.Item>
+            <Descriptions.Item label="Topic">{detail.topic}</Descriptions.Item>
+            <Descriptions.Item label="Patient">{detail.patient_name || '-'}</Descriptions.Item>
+            <Descriptions.Item label="Initiator">{detail.initiator_name || '-'}</Descriptions.Item>
+            <Descriptions.Item label="Experts">{(detail.experts || []).join(', ') || '-'}</Descriptions.Item>
+            <Descriptions.Item label="Status">{displayLabel(detail.status)}</Descriptions.Item>
+            <Descriptions.Item label="Notes">{detail.summary || '-'}</Descriptions.Item>
           </Descriptions>
         )}
       </Modal>

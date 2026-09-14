@@ -10,6 +10,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { patientsApi, consultationsApi, emrApi, conferencesApi, auditApi } from '@/services/business';
 import type { AuditLog } from '@/services/types';
 import { formatDateTime } from '@/utils/format';
+import { displayLabel } from '@/utils/labels';
 
 const { Title, Paragraph } = Typography;
 
@@ -53,32 +54,32 @@ const DashboardPage: React.FC = () => {
   }, []);
 
   const statCards = [
-    { title: '患者总数', value: stats?.patients, icon: <TeamOutlined />, color: '#1890ff' },
-    { title: '待接诊问诊', value: stats?.waitingConsultations, icon: <MessageOutlined />, color: '#52c41a' },
-    { title: '待审病历', value: stats?.pendingEmr, icon: <FileTextOutlined />, color: '#faad14' },
-    { title: '待会诊', value: stats?.pendingConferences, icon: <VideoCameraOutlined />, color: '#722ed1' },
+    { title: 'Total Patients', value: stats?.patients, icon: <TeamOutlined />, color: '#1890ff' },
+    { title: 'Awaiting Consultations', value: stats?.waitingConsultations, icon: <MessageOutlined />, color: '#52c41a' },
+    { title: 'Pending Records', value: stats?.pendingEmr, icon: <FileTextOutlined />, color: '#faad14' },
+    { title: 'Awaiting Conferences', value: stats?.pendingConferences, icon: <VideoCameraOutlined />, color: '#722ed1' },
   ];
 
   const columns = [
-    { title: '操作对象', dataIndex: 'target', key: 'target', render: (v: string | null) => v || '-' },
-    { title: '业务类型', dataIndex: 'action', key: 'action', render: (a: string) => <Tag color="geekblue">{a}</Tag> },
-    { title: '操作人', dataIndex: 'operator', key: 'operator', render: (v: string | null) => v || '-' },
-    { title: '时间', dataIndex: 'created_at', key: 'created_at', render: formatDateTime },
+    { title: 'Target', dataIndex: 'target', key: 'target', render: (v: string | null) => v || '-' },
+    { title: 'Action', dataIndex: 'action', key: 'action', render: (a: string) => <Tag color="geekblue">{displayLabel(a)}</Tag> },
+    { title: 'Operator', dataIndex: 'operator', key: 'operator', render: (v: string | null) => v || '-' },
+    { title: 'Time', dataIndex: 'created_at', key: 'created_at', render: formatDateTime },
     {
-      title: '结果',
+      title: 'Result',
       dataIndex: 'result',
       key: 'result',
-      render: (r: string) => <Tag color={r === '成功' ? 'green' : 'red'}>{r}</Tag>,
+      render: (r: string) => <Tag color={r === '成功' ? 'green' : 'red'}>{displayLabel(r)}</Tag>,
     },
   ];
 
   return (
     <div>
       <Title level={4} style={{ marginTop: 0 }}>
-        欢迎回来，{user.username}！
+        Welcome back, {user.username}!
       </Title>
       <Paragraph type="secondary">
-        这里是医生服务系统工作台，集中处理患者管理、在线问诊、电子病历、远程会诊与健康管理。
+        Use this workspace to manage patients, consultations, medical records, conferences, and health plans.
       </Paragraph>
 
       <Row gutter={16} style={{ marginTop: 8 }}>
@@ -95,7 +96,7 @@ const DashboardPage: React.FC = () => {
         ))}
       </Row>
 
-      <Card title="最近业务动态" style={{ marginTop: 16 }}>
+      <Card title="Recent Activity" style={{ marginTop: 16 }}>
         <Table
           rowKey="id"
           columns={columns}
