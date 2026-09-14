@@ -25,7 +25,7 @@ import {
   CurrentUserPayload,
 } from "../../common/decorators/current-user.decorator";
 import { Public } from "../../common/decorators/public.decorator";
-@ApiTags("健康管理")
+@ApiTags("Health Management")
 @ApiBearerAuth()
 @Controller("api/v1/health")
 export class HealthController {

@@ -47,7 +47,7 @@ export class HealthService implements OnModuleInit, OnModuleDestroy {
   }
   private access(r: HealthRecord, u: CurrentUserPayload) {
     if (!this.admin(u) && r.doctor_id !== u.userId)
-      throw new ForbiddenException("无权访问该健康计划");
+      throw new ForbiddenException("You do not have access to this health plan");
   }
   private async locked<T>(
     id: string,
@@ -59,7 +59,7 @@ export class HealthService implements OnModuleInit, OnModuleDestroy {
         where: { id },
         lock: { mode: "pessimistic_write" },
       });
-      if (!r) throw new NotFoundException("健康计划不存在");
+      if (!r) throw new NotFoundException("Health plan not found");
       this.access(r, u);
       return fn(r, m);
     });
@@ -68,12 +68,12 @@ export class HealthService implements OnModuleInit, OnModuleDestroy {
     const patient = await this.patients.findOne({
       where: { id: dto.patient_id },
     });
-    if (!patient) throw new BadRequestException("患者不存在");
+    if (!patient) throw new BadRequestException("Patient not found");
     if (!this.admin(u) && patient.doctor_id !== u.userId)
-      throw new ForbiddenException("无权为该患者制定计划");
+      throw new ForbiddenException("You cannot create plans for this patient");
     if (Object.values(dto).some((value) => value === null))
-      throw new BadRequestException("字段不能为 null");
-    if (!dto.plan.trim()) throw new BadRequestException("健康计划不能为空");
+      throw new BadRequestException("Fields cannot be null");
+    if (!dto.plan.trim()) throw new BadRequestException("Health plan cannot be empty");
     const saved = await this.repo.save(
       this.repo.create({
         ...dto,
@@ -81,7 +81,7 @@ export class HealthService implements OnModuleInit, OnModuleDestroy {
         doctor_id: u.userId,
       }),
     );
-    await this.audit.record(u, "制定健康计划", saved.patient_name);
+    await this.audit.record(u, "Create Health Plan", saved.patient_name);
     return saved;
   }
   async findAll(q: QueryHealthRecordDto, u: CurrentUserPayload) {
@@ -103,7 +103,7 @@ export class HealthService implements OnModuleInit, OnModuleDestroy {
   }
   async findOne(id: string, u: CurrentUserPayload) {
     const r = await this.repo.findOne({ where: { id } });
-    if (!r) throw new NotFoundException("健康计划不存在");
+    if (!r) throw new NotFoundException("Health plan not found");
     this.access(r, u);
     return r;
   }
@@ -123,25 +123,25 @@ export class HealthService implements OnModuleInit, OnModuleDestroy {
   async update(id: string, dto: UpdateHealthRecordDto, u: CurrentUserPayload) {
     const r = await this.locked(id, u, async (r, m) => {
       if (Object.values(dto).some((value) => value === null))
-        throw new BadRequestException("字段不能为 null");
+        throw new BadRequestException("Fields cannot be null");
       if (dto.plan !== undefined && !dto.plan.trim())
-        throw new BadRequestException("健康计划不能为空");
+        throw new BadRequestException("Health plan cannot be empty");
       Object.assign(r, dto);
       return m.save(r);
     });
-    await this.audit.record(u, "调整健康计划", r.patient_name);
+    await this.audit.record(u, "Adjust Health Plan", r.patient_name);
     return r;
   }
   async remove(id: string, u: CurrentUserPayload) {
     await this.locked(id, u, async (r, m) => {
       await m.remove(r);
     });
-    await this.audit.record(u, "删除健康计划", id);
-    return { message: "删除成功" };
+    await this.audit.record(u, "Delete health plan", id);
+    return { message: "Deleted successfully" };
   }
   private validateMeasurement(dto: MeasurementDto) {
     if (new Date(dto.measured_at).getTime() > Date.now() + 60000)
-      throw new BadRequestException("测量时间不能晚于当前时间");
+      throw new BadRequestException("Measurement time cannot be in the future");
     if (dto.kind === "血压") {
       if (
         dto.systolic == null ||
@@ -150,14 +150,14 @@ export class HealthService implements OnModuleInit, OnModuleDestroy {
         dto.glucose != null
       )
         throw new BadRequestException(
-          "血压需填写收缩压和舒张压，且收缩压应大于舒张压",
+          "Enter systolic and diastolic pressure; systolic pressure must be higher than diastolic pressure",
         );
     } else if (
       dto.glucose == null ||
       dto.systolic != null ||
       dto.diastolic != null
     )
-      throw new BadRequestException("血糖需填写数值");
+      throw new BadRequestException("Enter a blood glucose value");
   }
   private async saveMeasurement(
     r: HealthRecord,
@@ -192,15 +192,15 @@ export class HealthService implements OnModuleInit, OnModuleDestroy {
   }
   async measurement(id: string, dto: MeasurementDto, u: CurrentUserPayload) {
     const entry = await this.locked(id, u, (r, m) =>
-      this.saveMeasurement(r, dto, u.username + "（医生代录）", m),
+      this.saveMeasurement(r, dto, u.username + " (entered by doctor)", m),
     );
-    await this.audit.record(u, "录入健康监测", id);
+    await this.audit.record(u, "Record health measurement", id);
     return entry;
   }
   async reminder(id: string, dto: ReminderDto, u: CurrentUserPayload) {
-    if (!dto.message.trim()) throw new BadRequestException("提醒内容不能为空");
+    if (!dto.message.trim()) throw new BadRequestException("Reminder message cannot be empty");
     if (new Date(dto.next_run_at).getTime() < Date.now() - 60000)
-      throw new BadRequestException("提醒时间不能早于当前时间");
+      throw new BadRequestException("Reminder time cannot be in the past");
     const reminder = await this.locked(id, u, async (_, m) =>
       m.save(
         HealthReminder,
@@ -212,7 +212,7 @@ export class HealthService implements OnModuleInit, OnModuleDestroy {
         }),
       ),
     );
-    await this.audit.record(u, "设置健康提醒", id);
+    await this.audit.record(u, "Set health reminder", id);
     return reminder;
   }
   async cancelReminder(id: string, reminderId: string, u: CurrentUserPayload) {
@@ -222,9 +222,9 @@ export class HealthService implements OnModuleInit, OnModuleDestroy {
       { id: reminderId, plan_id: id },
       { enabled: false },
     );
-    if (!result.affected) throw new NotFoundException("提醒不存在");
-    await this.audit.record(u, "取消健康提醒", id);
-    return { message: "已取消" };
+    if (!result.affected) throw new NotFoundException("Reminder not found");
+    await this.audit.record(u, "Cancel health reminder", id);
+    return { message: "Cancelled" };
   }
   async assessment(id: string, dto: AssessmentDto, u: CurrentUserPayload) {
     if (
@@ -232,9 +232,9 @@ export class HealthService implements OnModuleInit, OnModuleDestroy {
       !dto.advice.trim() ||
       (dto.revised_plan !== undefined && !dto.revised_plan.trim())
     )
-      throw new BadRequestException("评估和建议不能为空");
+      throw new BadRequestException("Assessment and advice cannot be empty");
     if (new Date(dto.next_assessment_at).getTime() <= Date.now())
-      throw new BadRequestException("下次评估时间必须晚于当前时间");
+      throw new BadRequestException("The next assessment must be scheduled in the future");
     const entry = await this.locked(id, u, async (r, m) => {
       const data = { ...dto, previous_plan: r.plan };
       if (dto.revised_plan) r.plan = dto.revised_plan;
@@ -247,7 +247,7 @@ export class HealthService implements OnModuleInit, OnModuleDestroy {
           plan_id: id,
           kind: "notification",
           actor: u.username,
-          data: { message: "健康评估建议：" + dto.advice },
+          data: { message: "Health assessment advice: " + dto.advice },
         }),
       );
       return m.save(
@@ -260,7 +260,7 @@ export class HealthService implements OnModuleInit, OnModuleDestroy {
         }),
       );
     });
-    await this.audit.record(u, "评估健康并调整建议", id);
+    await this.audit.record(u, "Assess health and update advice", id);
     return entry;
   }
   async createAccess(id: string, u: CurrentUserPayload) {
@@ -271,7 +271,7 @@ export class HealthService implements OnModuleInit, OnModuleDestroy {
       r.patient_access_expires_at = expires_at;
       await m.save(r);
     });
-    await this.audit.record(u, "生成患者健康入口", id);
+    await this.audit.record(u, "Generate patient portal access", id);
     return { token, expires_at };
   }
   async revokeAccess(id: string, u: CurrentUserPayload) {
@@ -280,12 +280,12 @@ export class HealthService implements OnModuleInit, OnModuleDestroy {
       r.patient_access_expires_at = null;
       await m.save(r);
     });
-    await this.audit.record(u, "撤销患者健康入口", id);
-    return { message: "已撤销" };
+    await this.audit.record(u, "Revoke patient portal access", id);
+    return { message: "Revoked" };
   }
   private async patientPlan(token: string, m: EntityManager, lock = false) {
     if (!/^[a-f0-9]{64}$/.test(token))
-      throw new ForbiddenException("患者链接无效或已过期");
+      throw new ForbiddenException("Patient link is invalid or expired");
     const r = await m.findOne(HealthRecord, {
       where: {
         patient_access_hash: createHash("sha256").update(token).digest("hex"),
@@ -297,7 +297,7 @@ export class HealthService implements OnModuleInit, OnModuleDestroy {
       !r.patient_access_expires_at ||
       r.patient_access_expires_at.getTime() <= Date.now()
     )
-      throw new ForbiddenException("患者链接无效或已过期");
+      throw new ForbiddenException("Patient link is invalid or expired");
     return r;
   }
   async patientView(token: string) {
@@ -326,8 +326,8 @@ export class HealthService implements OnModuleInit, OnModuleDestroy {
   async patientMeasurement(token: string, dto: MeasurementDto) {
     return this.repo.manager.transaction(async (m) => {
       const r = await this.patientPlan(token, m, true);
-      const entry = await this.saveMeasurement(r, dto, "患者上传", m);
-      return { id: entry.id, message: "上传成功" };
+      const entry = await this.saveMeasurement(r, dto, "Patient upload", m);
+      return { id: entry.id, message: "Upload successful" };
     });
   }
   // Transactional row locks allow multiple instances without duplicate delivery.
@@ -351,7 +351,7 @@ export class HealthService implements OnModuleInit, OnModuleDestroy {
             m.create(HealthEntry, {
               plan_id: r.plan_id,
               kind: "notification",
-              actor: "系统",
+              actor: "System",
               data: {
                 message: r.message,
                 scheduled_at: r.next_run_at.toISOString(),
@@ -377,7 +377,7 @@ export class HealthService implements OnModuleInit, OnModuleDestroy {
       });
     } catch (e) {
       this.logger.error(
-        "健康提醒发送失败，将在下一轮重试",
+        "Health reminder delivery failed; retrying on the next cycle",
         e instanceof Error ? e.stack : String(e),
       );
     } finally {

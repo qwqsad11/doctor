@@ -1,3 +1,4 @@
+import { displayLabel } from "@/utils/labels";
 import React, { useEffect, useState } from "react";
 import {
   Card,
@@ -44,7 +45,7 @@ const ProfilePage: React.FC = () => {
       setProfile(p);
       form.setFieldsValue(p);
     } catch (error: any) {
-      message.error(error.response?.data?.message || "加载档案失败");
+      message.error(error.response?.data?.message || "Failed to load profile");
     }
   };
 
@@ -60,9 +61,9 @@ const ProfilePage: React.FC = () => {
       const updated = await usersApi.updateMe(values);
       dispatch(setUser(updated));
       setProfile(updated);
-      message.success("档案已更新");
+      message.success("Profile updated");
     } catch (error: any) {
-      message.error(error.response?.data?.message || "保存失败");
+      message.error(error.response?.data?.message || "Save failed");
     } finally {
       setLoading(false);
     }
@@ -76,11 +77,11 @@ const ProfilePage: React.FC = () => {
         old_password: values.old_password,
         new_password: values.new_password,
       });
-      message.success("密码已修改");
+      message.success("Password changed");
       pwdForm.resetFields();
       setPwdOpen(false);
     } catch (error: any) {
-      message.error(error.response?.data?.message || "修改密码失败");
+      message.error(error.response?.data?.message || "Failed to change password");
     } finally {
       setPwdLoading(false);
     }
@@ -96,8 +97,8 @@ const ProfilePage: React.FC = () => {
         type="info"
         showIcon
         style={{ marginBottom: 16 }}
-        message="权限范围"
-        description="当前角色决定可见数据范围；系统数据模型支持按患者、病历或会诊授予带到期时间的临时查看/编辑权限。课程演示默认仅展示本人负责的数据。"
+        message="Access Scope"
+        description="Your role determines the data you can see. The data model supports temporary view/edit permissions by patient, record, or consultation with expiry dates. The course demo shows only data assigned to you by default."
       />
       <Card>
         <Row gutter={24} align="middle">
@@ -112,9 +113,9 @@ const ProfilePage: React.FC = () => {
                   const updated = await usersApi.uploadAvatar(fd);
                   dispatch(setUser(updated));
                   setProfile(updated);
-                  message.success("头像已更新");
+                  message.success("Avatar updated");
                 } catch (error: any) {
-                  message.error(error.response?.data?.message || "上传失败");
+                  message.error(error.response?.data?.message || "Upload failed");
                 }
               }}
             >
@@ -127,7 +128,7 @@ const ProfilePage: React.FC = () => {
               </Avatar>
               <div style={{ marginTop: 8 }}>
                 <Button size="small" icon={<UploadOutlined />}>
-                  更换头像
+                  Change avatar
                 </Button>
               </div>
             </Upload>
@@ -141,55 +142,55 @@ const ProfilePage: React.FC = () => {
                 </Tag>
               ))}
               <Tag color="green">
-                {profile?.status === "active" ? "正常" : profile?.status}
+                {profile?.status === "active" ? "Active" : displayLabel(profile?.status)}
               </Tag>
             </Space>
             <div style={{ marginTop: 8, color: "#888" }}>
-              用户名：{profile?.username} · 邮箱：{profile?.email}
+              Username:{profile?.username} · Email:{profile?.email}
             </div>
           </Col>
         </Row>
       </Card>
 
-      <Card title="基本档案" style={{ marginTop: 16 }}>
+      <Card title="Profile" style={{ marginTop: 16 }}>
         <Form form={form} layout="vertical">
           <Row gutter={16}>
             <Col span={12}>
-              <Form.Item name="real_name" label="真实姓名">
-                <Input placeholder="真实姓名" />
+              <Form.Item name="real_name" label="Full name">
+                <Input placeholder="Full name" />
               </Form.Item>
             </Col>
             <Col span={12}>
-              <Form.Item name="gender" label="性别">
+              <Form.Item name="gender" label="Gender">
                 <Select
                   allowClear
-                  placeholder="选择性别"
+                  placeholder="Select gender"
                   options={[
-                    { value: "男", label: "男" },
-                    { value: "女", label: "女" },
+                    { value: "男", label: "Male" },
+                    { value: "女", label: "Female" },
                   ]}
                 />
               </Form.Item>
             </Col>
             <Col span={12}>
-              <Form.Item name="department" label="科室">
+              <Form.Item name="department" label="Department">
                 <Select
                   showSearch
                   allowClear
-                  placeholder="选择所属科室"
+                  placeholder="Select department"
                   options={departments.map((value) => ({
                     value,
-                    label: value,
+                    label: displayLabel(value),
                   }))}
                 />
               </Form.Item>
             </Col>
             <Col span={12}>
-              <Form.Item name="title" label="职称">
+              <Form.Item name="title" label="Professional Title">
                 <Select
                   showSearch
                   allowClear
-                  placeholder="选择职称"
+                  placeholder="Select professional title"
                   options={[
                     ...new Set(
                       [
@@ -201,91 +202,91 @@ const ProfilePage: React.FC = () => {
                         profile?.title,
                       ].filter((v): v is string => !!v),
                     ),
-                  ].map((value) => ({ value, label: value }))}
+                  ].map((value) => ({ value, label: displayLabel(value) }))}
                 />
               </Form.Item>
             </Col>
             <Col span={12}>
-              <Form.Item name="hospital" label="医院">
-                <Input placeholder="所在医院" />
+              <Form.Item name="hospital" label="Hospital">
+                <Input placeholder="Hospital" />
               </Form.Item>
             </Col>
             <Col span={12}>
               <Form.Item
                 name="email"
-                label="邮箱"
-                rules={[{ type: "email", message: "邮箱格式不正确" }]}
+                label="Email"
+                rules={[{ type: "email", message: "Enter a valid email address" }]}
               >
                 <Input />
               </Form.Item>
             </Col>
             <Col span={12}>
-              <Form.Item name="phone" label="手机号">
-                <Input placeholder="手机号" />
+              <Form.Item name="phone" label="Mobile number">
+                <Input placeholder="Mobile number" />
               </Form.Item>
             </Col>
             <Col span={24}>
-              <Form.Item name="bio" label="个人简介">
-                <Input.TextArea rows={3} placeholder="个人简介（可选）" />
+              <Form.Item name="bio" label="Bio">
+                <Input.TextArea rows={3} placeholder="Bio (optional)" />
               </Form.Item>
             </Col>
           </Row>
           <Space>
             <Button type="primary" loading={loading} onClick={handleSave}>
-              保存档案
+              Save profile
             </Button>
             <Button icon={<LockOutlined />} onClick={() => setPwdOpen(true)}>
-              修改密码
+              Change Password
             </Button>
           </Space>
         </Form>
       </Card>
 
       <Modal
-        title="修改密码"
+        title="Change Password"
         open={pwdOpen}
         onOk={handleChangePwd}
         onCancel={() => setPwdOpen(false)}
-        okText="确认修改"
-        cancelText="取消"
+        okText="Change password"
+        cancelText="Cancel"
         confirmLoading={pwdLoading}
         destroyOnClose
       >
         <Form form={pwdForm} layout="vertical">
           <Form.Item
             name="old_password"
-            label="当前密码"
-            rules={[{ required: true, message: "请输入当前密码" }]}
+            label="Current password"
+            rules={[{ required: true, message: "Enter your current password" }]}
           >
-            <Input.Password placeholder="当前密码" />
+            <Input.Password placeholder="Current password" />
           </Form.Item>
           <Form.Item
             name="new_password"
-            label="新密码"
+            label="New password"
             rules={[
-              { required: true, message: "请输入新密码" },
-              { min: 6, message: "密码至少6位" },
+              { required: true, message: "Enter a new password" },
+              { min: 6, message: "Password must be at least 6 characters" },
             ]}
           >
-            <Input.Password placeholder="新密码" />
+            <Input.Password placeholder="New password" />
           </Form.Item>
           <Form.Item
             name="confirm"
-            label="确认新密码"
+            label="Confirm new password"
             dependencies={["new_password"]}
             rules={[
-              { required: true, message: "请再次输入新密码" },
+              { required: true, message: "Re-enter your new password" },
               ({ getFieldValue }) => ({
                 validator(_, value) {
                   if (!value || getFieldValue("new_password") === value) {
                     return Promise.resolve();
                   }
-                  return Promise.reject(new Error("两次输入的密码不一致"));
+                  return Promise.reject(new Error("Passwords do not match"));
                 },
               }),
             ]}
           >
-            <Input.Password placeholder="确认新密码" />
+            <Input.Password placeholder="Confirm new password" />
           </Form.Item>
         </Form>
       </Modal>

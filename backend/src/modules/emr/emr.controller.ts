@@ -25,7 +25,7 @@ import {
   CurrentUserPayload,
 } from "../../common/decorators/current-user.decorator";
 import { EMR_TEMPLATES } from "./emr.templates";
-@ApiTags("电子病历")
+@ApiTags("Medical Records")
 @ApiBearerAuth()
 @Controller("api/v1/emr")
 export class EmrController {

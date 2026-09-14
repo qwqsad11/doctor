@@ -12,7 +12,7 @@ import {
 export class CreateConferenceDto {
   @ApiProperty() @IsString() @Length(1, 200) topic: string;
   @ApiPropertyOptional() @IsOptional() @IsUUID() patient_id?: string;
-  @ApiPropertyOptional({ type: [String], description: "邀请的医生账号ID" })
+  @ApiPropertyOptional({ type: [String], description: "Invited doctor account IDs" })
   @IsOptional()
   @IsArray()
   @ArrayUnique()

@@ -1,3 +1,4 @@
+import { displayLabel, displaySystemText } from "@/utils/labels";
 import { useCallback, useEffect, useState } from "react";
 import {
   Alert,
@@ -33,7 +34,7 @@ import {
 } from "./HealthWidgets";
 const levels = ["正常", "预警", "异常"].map((value) => ({
   value,
-  label: value,
+  label: displayLabel(value),
 }));
 const colors: Record<string, string> = {
   正常: "green",
@@ -88,7 +89,7 @@ export default function HealthPage() {
         const d = await healthWorkflow.detail(selectedId);
         if (active) {
           setDetail(d);
-          setUpdated(new Date().toLocaleTimeString());
+          setUpdated(new Date().toLocaleTimeString("en-US", { hour12: false }));
           setLiveError("");
         }
       } catch (e) {
@@ -136,7 +137,7 @@ export default function HealthPage() {
       } else await healthApi.create(v);
       setEditor(null);
       await refreshDetail();
-      message.success("健康计划已保存");
+      message.success("Health plan saved");
     } catch (e) {
       if (!(e as { errorFields?: unknown }).errorFields)
         message.error(errorMessage(e));
@@ -181,7 +182,7 @@ export default function HealthPage() {
       }
       setAction(null);
       await refreshDetail();
-      message.success("已保存");
+      message.success("Saved");
     } catch (e) {
       if (!(e as { errorFields?: unknown }).errorFields)
         message.error(errorMessage(e));
@@ -204,16 +205,16 @@ export default function HealthPage() {
   };
   return (
     <Card
-      title="患者健康管理"
+      title="Patient Health Management"
       extra={
         <Button type="primary" onClick={() => openEditor()}>
-          制定健康计划
+          Create Health Plan
         </Button>
       }
     >
       <Space wrap style={{ marginBottom: 16 }}>
         <Input.Search
-          placeholder="搜索患者或计划"
+          placeholder="Search by patient or plan"
           allowClear
           onSearch={(v) => {
             setKeyword(v);
@@ -222,8 +223,8 @@ export default function HealthPage() {
           style={{ width: 280 }}
         />
         <Select
-          aria-label="预警等级"
-          placeholder="全部等级"
+          aria-label="Alert Level"
+          placeholder="All levels"
           options={levels}
           allowClear
           value={level}
@@ -233,7 +234,7 @@ export default function HealthPage() {
           }}
           style={{ width: 140 }}
         />
-        <Button onClick={load}>刷新</Button>
+        <Button onClick={load}>Refresh</Button>
       </Space>
       <Table
         rowKey="id"
@@ -248,20 +249,20 @@ export default function HealthPage() {
           showSizeChanger: false,
         }}
         columns={[
-          { title: "患者", dataIndex: "patient_name" },
-          { title: "健康计划", dataIndex: "plan" },
+          { title: "Patient", dataIndex: "patient_name" },
+          { title: "Health Plan", dataIndex: "plan" },
           {
-            title: "最新监测",
+            title: "Latest measurement",
             dataIndex: "metrics",
-            render: (v) => v || "暂无上传",
+            render: (v) => v ? displaySystemText(v) : "No uploads yet",
           },
           {
-            title: "评估等级",
+            title: "Assessment level",
             dataIndex: "alert_level",
-            render: (v) => <Tag color={colors[v]}>{v}</Tag>,
+            render: (v) => <Tag color={colors[v]}>{displayLabel(v)}</Tag>,
           },
           {
-            title: "下次评估",
+            title: "Next assessment",
             render: (_, r) => {
               const due = (r as HealthDetail).next_assessment_at;
               return due ? (
@@ -269,12 +270,12 @@ export default function HealthPage() {
                   {formatDateTime(due)}
                 </Tag>
               ) : (
-                "待安排"
+                "Not scheduled"
               );
             },
           },
           {
-            title: "操作",
+            title: "Actions",
             render: (_, r) => (
               <Button
                 type="link"
@@ -285,14 +286,15 @@ export default function HealthPage() {
                   setSelectedId(r.id);
                 }}
               >
-                查看 / 管理
+
+                View / Manage
               </Button>
             ),
           },
         ]}
       />
       <Drawer
-        title={detail ? detail.patient_name + " · 健康管理" : "加载健康计划"}
+        title={detail ? detail.patient_name + " · Health Management" : "Loading health plan"}
         width={Math.min(1000, window.innerWidth)}
         open={!!selectedId}
         onClose={() => {
@@ -305,20 +307,22 @@ export default function HealthPage() {
         {detail && (
           <>
             <Space wrap style={{ marginBottom: 16 }}>
-              <Tag color={colors[detail.alert_level]}>{detail.alert_level}</Tag>
-              <Button onClick={() => openEditor(detail)}>调整计划</Button>
+              <Tag color={colors[detail.alert_level]}>{displayLabel(detail.alert_level)}</Tag>
+              <Button onClick={() => openEditor(detail)}>Adjust plan</Button>
               <Button onClick={() => openAction("assessment")}>
-                新增健康评估
+
+                Add health assessment
               </Button>
               <Typography.Text type="secondary">
-                每 10 秒刷新 · {updated}
+
+                Refreshes every 10 seconds · {updated}
               </Typography.Text>
             </Space>
             <Tabs
               items={[
                 {
                   key: "monitor",
-                  label: "健康监测",
+                  label: "Health monitoring",
                   children: (
                     <>
                       <Descriptions
@@ -327,28 +331,29 @@ export default function HealthPage() {
                         size="small"
                         style={{ marginBottom: 16 }}
                       >
-                        <Descriptions.Item label="管理计划">
+                        <Descriptions.Item label="Management plan">
                           {detail.plan}
                         </Descriptions.Item>
-                        <Descriptions.Item label="个性化目标">
+                        <Descriptions.Item label="Personal goals">
                           <span style={{ whiteSpace: "pre-wrap" }}>
-                            {detail.goals || "未填写"}
+                            {detail.goals || "Not provided"}
                           </span>
                         </Descriptions.Item>
-                        <Descriptions.Item label="生活与健康指导">
+                        <Descriptions.Item label="Lifestyle and health guidance">
                           <span style={{ whiteSpace: "pre-wrap" }}>
-                            {detail.guidance || "未填写"}
+                            {detail.guidance || "Not provided"}
                           </span>
                         </Descriptions.Item>
-                        <Descriptions.Item label="最新指标">
-                          {detail.metrics || "暂无监测"}
+                        <Descriptions.Item label="Latest Metrics">
+                          {displaySystemText(detail.metrics) === "-" ? "No measurements yet" : displaySystemText(detail.metrics)}
                         </Descriptions.Item>
                       </Descriptions>
                       <Button
                         onClick={() => openAction("measurement")}
                         style={{ marginBottom: 16 }}
                       >
-                        代录监测数据
+
+                        Record measurements
                       </Button>
                       <MeasurementTable entries={detail.entries} />
                     </>
@@ -356,7 +361,7 @@ export default function HealthPage() {
                 },
                 {
                   key: "reminders",
-                  label: "提醒与消息",
+                  label: "Reminders and messages",
                   children: (
                     <>
                       <Space style={{ marginBottom: 16 }}>
@@ -364,10 +369,12 @@ export default function HealthPage() {
                           type="primary"
                           onClick={() => openAction("reminder")}
                         >
-                          设置提醒任务
+
+                          Schedule reminder
                         </Button>
                         <Typography.Text type="secondary">
-                          到期后自动送达患者入口消息列表
+
+                          Automatically delivered to the patient portal when due
                         </Typography.Text>
                       </Space>
                       <Table
@@ -376,31 +383,31 @@ export default function HealthPage() {
                         dataSource={detail.reminders}
                         pagination={{ pageSize: 5 }}
                         columns={[
-                          { title: "提醒内容", dataIndex: "message" },
+                          { title: "Reminder message", dataIndex: "message" },
                           {
-                            title: "计划时间",
+                            title: "Scheduled time",
                             dataIndex: "next_run_at",
                             render: formatDateTime,
                           },
                           {
-                            title: "周期",
+                            title: "Frequency",
                             dataIndex: "interval_days",
-                            render: (v) => (v ? "每 " + v + " 天" : "一次"),
+                            render: (v) => (v ? "Every " + v + " days" : "Once"),
                           },
                           {
-                            title: "状态",
+                            title: "Status",
                             render: (_, r) => (
                               <Tag>
                                 {r.enabled
-                                  ? "待执行"
+                                  ? "Pending"
                                   : r.last_sent_at
-                                    ? "已发送 / 已结束"
-                                    : "已取消"}
+                                    ? "Sent / Finished"
+                                    : "Cancelled"}
                               </Tag>
                             ),
                           },
                           {
-                            title: "操作",
+                            title: "Actions",
                             render: (_, r) =>
                               r.enabled && (
                                 <Button
@@ -418,23 +425,23 @@ export default function HealthPage() {
                                     }
                                   }}
                                 >
-                                  取消
+                                  Cancel
                                 </Button>
                               ),
                           },
                         ]}
                       />
                       <List
-                        header="患者已收到的消息"
+                        header="Messages delivered to the patient"
                         dataSource={detail.entries.filter(
                           (e) => e.kind === "notification",
                         )}
-                        locale={{ emptyText: "暂无消息" }}
+                        locale={{ emptyText: "No messages yet" }}
                         pagination={{ pageSize: 5 }}
                         renderItem={(e) => (
                           <List.Item>
                             <List.Item.Meta
-                              title={e.data.message}
+                              title={displaySystemText(e.data.message)}
                               description={formatDateTime(e.created_at)}
                             />
                           </List.Item>
@@ -445,7 +452,7 @@ export default function HealthPage() {
                 },
                 {
                   key: "assessment",
-                  label: "评估记录",
+                  label: "Assessment history",
                   children: (
                     <>
                       <Alert
@@ -458,9 +465,9 @@ export default function HealthPage() {
                         }
                         message={
                           detail.next_assessment_at
-                            ? "下次评估：" +
+                            ? "Next assessment:" +
                               formatDateTime(detail.next_assessment_at)
-                            : "尚未安排下次评估"
+                            : "Next assessment has not been scheduled"
                         }
                       />
                       {detail.entries.some((e) => e.kind === "assessment") ? (
@@ -473,17 +480,19 @@ export default function HealthPage() {
                                   <b>
                                     {e.actor} · {formatDateTime(e.created_at)}
                                   </b>
-                                  <p>评估：{e.data.conclusion}</p>
-                                  <p>建议：{e.data.advice}</p>
-                                  <p>等级：{e.data.alert_level}</p>
+                                  <p>Assessment:{e.data.conclusion}</p>
+                                  <p>Advice:{e.data.advice}</p>
+                                  <p>Level:{displayLabel(e.data.alert_level)}</p>
                                   {e.data.revised_plan && (
                                     <p>
-                                      计划调整：{e.data.previous_plan} →{" "}
+
+                                      Plan change:{e.data.previous_plan} →{" "}
                                       {e.data.revised_plan}
                                     </p>
                                   )}
                                   <p>
-                                    下次评估：
+
+                                    Next assessment:
                                     {formatDateTime(
                                       e.data.next_assessment_at || "",
                                     )}
@@ -493,21 +502,21 @@ export default function HealthPage() {
                             }))}
                         />
                       ) : (
-                        <Empty description="暂无评估记录" />
+                        <Empty description="No assessments yet" />
                       )}
                     </>
                   ),
                 },
                 {
                   key: "access",
-                  label: "患者入口",
+                  label: "Patient portal",
                   children: (
                     <>
                       <Alert
                         type="info"
                         showIcon
-                        message="为本计划生成患者专属链接"
-                        description="患者可通过链接上传血压、血糖并查看健康提醒。链接有效期为 7 天；重新生成会使旧链接失效。"
+                        message="Create a patient link for this plan"
+                        description="Patients can upload blood pressure and glucose readings and view reminders. Links expire in 7 days. Generating a new link invalidates the previous link."
                         style={{ marginBottom: 16 }}
                       />
                       <Space>
@@ -516,7 +525,8 @@ export default function HealthPage() {
                           loading={busy}
                           onClick={generateLink}
                         >
-                          生成 / 更新患者链接
+
+                          Generate / Renew patient link
                         </Button>
                         {detail.patient_access_expires_at && (
                           <Button
@@ -526,19 +536,21 @@ export default function HealthPage() {
                                 await healthWorkflow.revoke(detail.id);
                                 setLink("");
                                 await refreshDetail();
-                                message.success("链接已撤销");
+                                message.success("Link revoked");
                               } catch (e) {
                                 message.error(errorMessage(e));
                               }
                             }}
                           >
-                            撤销链接
+
+                            Revoke link
                           </Button>
                         )}
                       </Space>
                       {detail.patient_access_expires_at && (
                         <p>
-                          到期时间：
+
+                          Expires:
                           {formatDateTime(detail.patient_access_expires_at)}
                         </p>
                       )}
@@ -551,7 +563,8 @@ export default function HealthPage() {
                             {link}
                           </Typography.Paragraph>
                           <a href={link} target="_blank" rel="noreferrer">
-                            打开患者入口
+
+                            Open patient portal
                           </a>
                         </Card>
                       )}
@@ -561,7 +574,7 @@ export default function HealthPage() {
               ]}
             />
             <Popconfirm
-              title="删除此计划及其监测、评估、提醒记录？"
+              title="Delete this plan and its measurements, assessments, and reminders?"
               onConfirm={async () => {
                 try {
                   await healthApi.remove(detail.id);
@@ -574,25 +587,26 @@ export default function HealthPage() {
               }}
             >
               <Button danger style={{ marginTop: 32 }}>
-                删除计划
+
+                Delete plan
               </Button>
             </Popconfirm>
           </>
         )}
       </Drawer>
       <Modal
-        title={editor?.id ? "调整健康计划" : "制定健康计划"}
+        title={editor?.id ? "Adjust Health Plan" : "Create Health Plan"}
         open={!!editor}
         onCancel={() => setEditor(null)}
         onOk={save}
         confirmLoading={busy}
-        okText="保存"
+        okText="Save"
         destroyOnClose
       >
         <Form form={form} layout="vertical">
           <Form.Item
             name="patient_id"
-            label="患者"
+            label="Patient"
             rules={[{ required: true }]}
           >
             <Select
@@ -607,18 +621,18 @@ export default function HealthPage() {
           </Form.Item>
           <Form.Item
             name="plan"
-            label="计划名称"
+            label="Plan name"
             rules={[{ required: true, whitespace: true }]}
           >
             <Input maxLength={200} />
           </Form.Item>
-          <Form.Item name="goals" label="个性化健康目标">
+          <Form.Item name="goals" label="Personal health goals">
             <Input.TextArea maxLength={5000} rows={3} />
           </Form.Item>
-          <Form.Item name="guidance" label="生活方式、监测与随访建议">
+          <Form.Item name="guidance" label="Lifestyle, monitoring, and follow-up advice">
             <Input.TextArea maxLength={5000} rows={4} />
           </Form.Item>
-          <Form.Item name="alert_level" label="当前评估等级">
+          <Form.Item name="alert_level" label="Current assessment level">
             <Select options={levels} />
           </Form.Item>
         </Form>
@@ -626,16 +640,16 @@ export default function HealthPage() {
       <Modal
         title={
           action === "measurement"
-            ? "代录监测数据"
+            ? "Record measurements"
             : action === "reminder"
-              ? "设置健康提醒"
-              : "健康评估"
+              ? "Set health reminder"
+              : "Health assessment"
         }
         open={!!action}
         onCancel={() => setAction(null)}
         onOk={apply}
         confirmLoading={busy}
-        okText="保存"
+        okText="Save"
         destroyOnClose
       >
         <Form form={actionForm} layout="vertical">
@@ -644,21 +658,21 @@ export default function HealthPage() {
             <>
               <Form.Item
                 name="message"
-                label="提醒内容"
+                label="Reminder message"
                 rules={[{ required: true, whitespace: true }]}
               >
                 <Input.TextArea maxLength={500} rows={3} />
               </Form.Item>
               <Form.Item
                 name="next_run_at"
-                label="首次提醒时间"
+                label="First reminder time"
                 rules={[{ required: true }]}
               >
                 <Input type="datetime-local" />
               </Form.Item>
               <Form.Item
                 name="interval_days"
-                label="重复间隔（天，0 为一次）"
+                label="Repeat interval (days, 0 for once)"
                 rules={[{ required: true }]}
               >
                 <InputNumber min={0} max={365} precision={0} />
@@ -669,31 +683,31 @@ export default function HealthPage() {
             <>
               <Form.Item
                 name="conclusion"
-                label="评估结论"
+                label="Assessment conclusion"
                 rules={[{ required: true, whitespace: true }]}
               >
                 <Input.TextArea maxLength={5000} rows={3} />
               </Form.Item>
               <Form.Item
                 name="advice"
-                label="调整后的健康建议（同步给患者）"
+                label="Updated health advice (shared with the patient)"
                 rules={[{ required: true, whitespace: true }]}
               >
                 <Input.TextArea maxLength={5000} rows={3} />
               </Form.Item>
               <Form.Item
                 name="alert_level"
-                label="评估等级"
+                label="Assessment level"
                 rules={[{ required: true }]}
               >
                 <Select options={levels} />
               </Form.Item>
-              <Form.Item name="revised_plan" label="调整计划名称（选填）">
+              <Form.Item name="revised_plan" label="Revised plan name (optional)">
                 <Input maxLength={200} />
               </Form.Item>
               <Form.Item
                 name="next_assessment_at"
-                label="下次评估时间"
+                label="Next assessment time"
                 rules={[{ required: true }]}
               >
                 <Input type="datetime-local" />

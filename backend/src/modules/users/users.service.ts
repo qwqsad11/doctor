@@ -1,3 +1,4 @@
+import { PROFESSIONAL_TITLE_LABELS } from "./departments";
 import {
   Injectable,
   NotFoundException,
@@ -31,7 +32,7 @@ export class UsersService {
 
   async findById(id: string): Promise<User> {
     const user = await this.usersRepository.findOne({ where: { id } });
-    if (!user) throw new NotFoundException("用户不存在");
+    if (!user) throw new NotFoundException("User not found");
     return user;
   }
 
@@ -47,7 +48,7 @@ export class UsersService {
         where: { email: dto.email },
       });
       if (existing && existing.id !== userId) {
-        throw new ConflictException("该邮箱已被占用");
+        throw new ConflictException("This email address is already in use");
       }
     }
 
@@ -64,11 +65,11 @@ export class UsersService {
   async changePassword(userId: string, dto: ChangePasswordDto) {
     const user = await this.findById(userId);
     const ok = await bcrypt.compare(dto.old_password, user.password_hash);
-    if (!ok) throw new BadRequestException("当前密码不正确");
+    if (!ok) throw new BadRequestException("Current password is incorrect");
 
     const hash = await bcrypt.hash(dto.new_password, 10);
     await this.usersRepository.update(userId, { password_hash: hash });
-    return { message: "密码修改成功" };
+    return { message: "Password changed successfully" };
   }
 
   /** 更新头像地址 */
@@ -106,11 +107,16 @@ export class UsersService {
       )
       .andWhere("u.id <> :id", { id: excludeId });
     if (department) qb.andWhere("u.department = :department", { department });
-    if (keyword)
+    if (keyword) {
+      const titles = Object.entries(PROFESSIONAL_TITLE_LABELS)
+        .filter(([, label]) => label.toLowerCase().includes(keyword.trim().toLowerCase()))
+        .map(([value]) => value);
       qb.andWhere(
-        "(u.real_name ILIKE :kw OR u.username ILIKE :kw OR u.title ILIKE :kw)",
-        { kw: "%" + keyword + "%" },
+        "(u.real_name ILIKE :kw OR u.username ILIKE :kw OR u.title ILIKE :kw" +
+          (titles.length ? " OR u.title IN (:...titles))" : ")"),
+        { kw: "%" + keyword + "%", ...(titles.length ? { titles } : {}) },
       );
+    }
     const [list, total] = await qb
       .orderBy("u.department", "ASC")
       .addOrderBy("u.username", "ASC")
@@ -129,13 +135,13 @@ export class UsersService {
   async setRoles(id: string, dto: SetUserRolesDto, actor: CurrentUserPayload) {
     const user = await this.findById(id);
     if (user.id === actor.userId && !dto.roles.includes("admin")) {
-      throw new BadRequestException("不能移除自己的管理员角色");
+      throw new BadRequestException("You cannot remove your own administrator role");
     }
     user.roles = dto.roles;
     await this.usersRepository.save(user);
     await this.auditService.record(
       actor,
-      "修改用户角色",
+      "Update user roles",
       `${user.username}: ${dto.roles.join(",")}`,
     );
     return sanitizeUser(user);
@@ -155,7 +161,7 @@ export class UsersService {
   ) {
     await this.revokeExpiredPermissions();
     if (new Date(dto.expiresAt) <= new Date())
-      throw new BadRequestException("过期时间必须晚于当前时间");
+      throw new BadRequestException("Expiry time must be in the future");
     const user = await this.findById(dto.userId);
     const permission = await this.tempPermissionsRepository.save(
       this.tempPermissionsRepository.create({
@@ -166,7 +172,7 @@ export class UsersService {
     );
     await this.auditService.record(
       actor,
-      "授予临时权限",
+      "Grant temporary permission",
       `${user.username}: ${dto.resourceType}/${dto.resourceId}`,
     );
     return permission;
@@ -181,12 +187,12 @@ export class UsersService {
       where: { id },
     });
     if (!permission || permission.revokedAt)
-      throw new NotFoundException("临时权限不存在或已撤销");
+      throw new NotFoundException("Temporary permission not found or already revoked");
     permission.revokedAt = new Date();
     await this.tempPermissionsRepository.save(permission);
     await this.auditService.record(
       actor,
-      automatic ? "自动撤销临时权限" : "撤销临时权限",
+      automatic ? "Automatically revoke temporary permission" : "Revoke temporary permission",
       `${permission.resourceType}/${permission.resourceId}`,
     );
   }

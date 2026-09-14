@@ -165,7 +165,7 @@ export async function patientRequest<T>(
     throw new Error(
       Array.isArray(body.message)
         ? body.message.join("；")
-        : body.message || "请求失败",
+        : body.message || "Request failed",
     );
   return body as T;
 }
@@ -174,6 +174,6 @@ export function errorMessage(e: unknown) {
     response?: { data?: { message?: string | string[] } };
     message?: string;
   };
-  const value = error.response?.data?.message || error.message || "操作失败";
+  const value = error.response?.data?.message || error.message || "Operation failed";
   return Array.isArray(value) ? value.join("；") : value;
 }

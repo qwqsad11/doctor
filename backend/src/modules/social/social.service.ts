@@ -45,7 +45,7 @@ export class SocialService {
 
   async findOne(id: string) {
     const post = await this.postsRepository.findOne({ where: { id } });
-    if (!post) throw new NotFoundException('帖子不存在');
+    if (!post) throw new NotFoundException("Post not found");
     return post;
   }
 
@@ -64,6 +64,6 @@ export class SocialService {
   async remove(id: string) {
     const post = await this.findOne(id);
     await this.postsRepository.remove(post);
-    return { message: '删除成功' };
+    return { message: "Deleted successfully" };
   }
 }

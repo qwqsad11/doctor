@@ -81,3 +81,20 @@ Remove-Item Env:WORKFLOW_BROWSER_TEST
 初始化已准备“跨科室联合会诊演示”，可直接登录 senior_demo、doctor_other 处理邀请。重复运行 seed:acceptance 只补齐空科室或旧的“演示科室”，保留已修改的科室、密码和会诊状态。
 
 此次新增的是账号邀请和会诊意见协作；现有项目尚未接入真实多人音视频通话。
+
+## 2026-09-15 本地整合
+
+整合上游 master 0ee2b84 与功能分支 c123a4d。原功能分支保留；当前分支 integrate/latest-master-20260915 未创建合并提交或推送。
+
+本机访问 http://127.0.0.1:3000；前端监听 0.0.0.0，局域网设备可使用本机局域网 IP 和 3000 端口（需网络及防火墙允许）。API 和头像走同源代理。沿用本机数据库，备份在 .runtime/before-integration-20260915.dump。
+
+病历审核、医嘱、健康监测、提醒、患者链接、科室及联合会诊功能保留。上游英文界面已合入，新增业务流程仍有部分中文。新建病历入口现为 Create Medical Record，发起会诊为 Start conference。
+
+验证：后端构建、前端类型检查及构建、124 项接口断言和桌面/移动端浏览器回归通过；部署后的同源登录和五个鉴权接口通过。Docker 配置已整合并补充头像代理及构建忽略文件；本机未安装 Docker，未执行容器构建。
+
+
+## English interface update (2026-09-15)
+
+System controls, forms, messages, department and professional-title labels, workflow statuses, structured-template labels, and API errors now use English. Date/time formatting uses English. Existing patient names and clinical text are preserved, and legacy database enum values and structured field keys remain compatible. English professional-title search is supported.
+
+Verification: backend build, frontend type-check/build, 161 workflow assertions, and desktop/mobile browser regressions passed, including checks for English system controls and API errors. No Git commit or push was created.

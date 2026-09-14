@@ -35,7 +35,7 @@ export class ConferencesService {
     const user = await this.repo.manager.findOne(User, {
       where: { id: u.userId, status: "active" },
     });
-    if (!user) throw new ForbiddenException("账号已停用");
+    if (!user) throw new ForbiddenException("Account disabled");
     return user;
   }
   private eligible(u: User) {
@@ -49,21 +49,21 @@ export class ConferencesService {
     previous: ConferenceParticipant[] = [],
   ) {
     if (ids.includes(initiator))
-      throw new BadRequestException("发起人无需重复邀请自己");
+      throw new BadRequestException("The initiator does not need to invite themselves");
     const users = ids.length
       ? await this.repo.manager.find(User, {
           where: { id: In(ids), status: "active" },
         })
       : [];
     if (users.length !== ids.length || users.some((u) => !this.eligible(u)))
-      throw new BadRequestException("请选择有效且在职的医生账号");
+      throw new BadRequestException("Select valid, active doctor accounts");
     return ids.map((id) => {
       const user = users.find((u) => u.id === id)!;
       const old = previous.find((p) => p.id === id);
       return {
         id,
         name: user.real_name || user.username,
-        department: user.department || "未设置科室",
+        department: user.department || "Department not set",
         title: user.title || "",
         response: old?.response || "待响应",
         responded_at: old?.responded_at || null,
@@ -73,21 +73,21 @@ export class ConferencesService {
   async create(dto: CreateConferenceDto, u: CurrentUserPayload) {
     const actor = await this.current(u);
     if (!this.admin(u) && !this.eligible(actor))
-      throw new ForbiddenException("仅医生可发起会诊");
+      throw new ForbiddenException("Only doctors can initiate a conference");
     if (!dto.topic.trim() || Object.values(dto).some((v) => v === null))
-      throw new BadRequestException("会诊字段不能为空或 null");
+      throw new BadRequestException("Conference fields cannot be empty or null");
     if (!dto.expert_ids?.length && !dto.experts?.length)
-      throw new BadRequestException("请至少选择一名参会医生");
+      throw new BadRequestException("Select at least one participating doctor");
     if (dto.expert_ids?.length && dto.experts?.length)
-      throw new BadRequestException("请选择医生账号，不要同时提交手填专家姓名");
+      throw new BadRequestException("Select doctor accounts without also entering expert names manually");
     let patientName: string | null = null;
     if (dto.patient_id) {
       const patient = await this.patients.findOne({
         where: { id: dto.patient_id },
       });
-      if (!patient) throw new BadRequestException("患者不存在");
+      if (!patient) throw new BadRequestException("Patient not found");
       if (!this.admin(u) && patient.doctor_id !== u.userId)
-        throw new ForbiddenException("无权为该患者发起会诊");
+        throw new ForbiddenException("You cannot initiate conferences for this patient");
       patientName = patient.name;
     }
     const participants = await this.participants(
@@ -102,7 +102,7 @@ export class ConferencesService {
           "CF" + randomUUID().replace(/-/g, "").slice(0, 20).toUpperCase(),
         initiator_id: u.userId,
         initiator_name: actor.real_name || u.username,
-        initiator_department: actor.department || "未设置科室",
+        initiator_department: actor.department || "Department not set",
         expert_ids: dto.expert_ids || [],
         participants,
         experts: participants.length
@@ -112,7 +112,7 @@ export class ConferencesService {
         status: "待会诊",
       }),
     );
-    await this.audit.record(u, "发起跨科室会诊", saved.conference_no);
+    await this.audit.record(u, "Start multidisciplinary conference", saved.conference_no);
     return saved;
   }
   async findAll(q: QueryConferenceDto, u: CurrentUserPayload) {
@@ -138,9 +138,9 @@ export class ConferencesService {
   async findOne(id: string, u: CurrentUserPayload) {
     await this.current(u);
     const c = await this.repo.findOne({ where: { id } });
-    if (!c) throw new NotFoundException("会诊不存在");
+    if (!c) throw new NotFoundException("Conference not found");
     if (!this.host(c, u) && !c.expert_ids.includes(u.userId))
-      throw new ForbiddenException("无权访问该会诊");
+      throw new ForbiddenException("You do not have access to this conference");
     return c;
   }
   private async mutate(
@@ -155,9 +155,9 @@ export class ConferencesService {
         where: { id },
         lock: { mode: "pessimistic_write" },
       });
-      if (!c) throw new NotFoundException("会诊不存在");
+      if (!c) throw new NotFoundException("Conference not found");
       if (!this.host(c, u) && !c.expert_ids.includes(u.userId))
-        throw new ForbiddenException("已不在会诊名单中");
+        throw new ForbiddenException("You are no longer a conference participant");
       await change(c);
       return m.save(c);
     });
@@ -165,21 +165,21 @@ export class ConferencesService {
     return saved;
   }
   update(id: string, dto: UpdateConferenceDto, u: CurrentUserPayload) {
-    return this.mutate(id, u, "更新会诊", async (c) => {
+    return this.mutate(id, u, "Update conference", async (c) => {
       if (!this.host(c, u))
-        throw new ForbiddenException("仅发起人或管理员可管理会诊");
+        throw new ForbiddenException("Only the initiator or an administrator can manage this conference");
       if (c.status === "已完成")
-        throw new BadRequestException("已完成会诊不可修改");
+        throw new BadRequestException("Completed conferences cannot be edited");
       if (
         Object.values(dto).some((v) => v === null) ||
         (dto.topic !== undefined && !dto.topic.trim())
       )
-        throw new BadRequestException("会诊字段无效");
+        throw new BadRequestException("Invalid conference fields");
       if (dto.expert_ids !== undefined) {
         if (c.status !== "待会诊")
-          throw new BadRequestException("仅会诊开始前可调整参会名单");
+          throw new BadRequestException("Participants can only be changed before the conference starts");
         if (!dto.expert_ids.length)
-          throw new BadRequestException("至少保留一位受邀医生");
+          throw new BadRequestException("Keep at least one invited doctor");
         c.participants = await this.participants(
           dto.expert_ids,
           c.initiator_id || u.userId,
@@ -193,15 +193,15 @@ export class ConferencesService {
           !(c.status === "待会诊" && dto.status === "进行中") &&
           !(c.status === "进行中" && dto.status === "已完成")
         )
-          throw new BadRequestException("请按开始会诊、完成会诊的顺序操作");
+          throw new BadRequestException("Start the conference before completing it");
         if (
           dto.status === "进行中" &&
           c.expert_ids.length &&
           !c.participants.some((p) => p.response === "已接受")
         )
-          throw new BadRequestException("至少一名医生接受邀请后才能开始");
+          throw new BadRequestException("At least one doctor must accept before the conference can start");
         if (dto.status === "已完成" && !(dto.summary ?? c.summary)?.trim())
-          throw new BadRequestException("请填写会诊总结");
+          throw new BadRequestException("Enter a conference summary");
         c.status = dto.status;
       }
       if (dto.topic !== undefined) c.topic = dto.topic;
@@ -211,25 +211,25 @@ export class ConferencesService {
     });
   }
   respond(id: string, response: "accept" | "decline", u: CurrentUserPayload) {
-    return this.mutate(id, u, "响应会诊邀请", async (c) => {
+    return this.mutate(id, u, "Respond to conference invitation", async (c) => {
       if (c.status !== "待会诊")
-        throw new BadRequestException("会诊已开始或结束，不能再响应邀请");
+        throw new BadRequestException("Invitations cannot be answered after the conference has started or ended");
       const actor = await this.current(u);
       if (!this.eligible(actor))
-        throw new ForbiddenException("当前账号没有医生角色");
+        throw new ForbiddenException("The current account does not have a doctor role");
       const participant = c.participants.find((p) => p.id === u.userId);
-      if (!participant) throw new ForbiddenException("你不是受邀医生");
+      if (!participant) throw new ForbiddenException("You are not an invited doctor");
       if (participant.response !== "待响应")
-        throw new BadRequestException("已响应过此邀请");
+        throw new BadRequestException("You have already responded to this invitation");
       participant.response = response === "accept" ? "已接受" : "已拒绝";
       participant.responded_at = new Date().toISOString();
     });
   }
   opinion(id: string, content: string, u: CurrentUserPayload) {
-    return this.mutate(id, u, "提交会诊意见", async (c) => {
+    return this.mutate(id, u, "Submit opinion", async (c) => {
       if (c.status !== "进行中")
-        throw new BadRequestException("仅进行中的会诊可提交意见");
-      if (!content.trim()) throw new BadRequestException("意见不能为空");
+        throw new BadRequestException("Opinions can only be submitted during an active conference");
+      if (!content.trim()) throw new BadRequestException("Opinion cannot be empty");
       const actor = await this.current(u);
       if (
         !this.host(c, u) &&
@@ -238,14 +238,14 @@ export class ConferencesService {
             (p) => p.id === u.userId && p.response === "已接受",
           ))
       )
-        throw new ForbiddenException("请先接受会诊邀请");
+        throw new ForbiddenException("Accept the conference invitation first");
       if (c.opinions.length >= 300)
-        throw new BadRequestException("单场会诊最多保留300条意见");
+        throw new BadRequestException("A conference can contain at most 300 opinions");
       c.opinions.push({
         id: randomUUID(),
         user_id: u.userId,
         name: actor.real_name || u.username,
-        department: actor.department || "未设置科室",
+        department: actor.department || "Department not set",
         content,
         created_at: new Date().toISOString(),
       });
@@ -258,14 +258,14 @@ export class ConferencesService {
         where: { id },
         lock: { mode: "pessimistic_write" },
       });
-      if (!c) throw new NotFoundException("会诊不存在");
+      if (!c) throw new NotFoundException("Conference not found");
       if (!this.host(c, u))
-        throw new ForbiddenException("仅发起人或管理员可删除会诊");
+        throw new ForbiddenException("Only the initiator or an administrator can delete this conference");
       if (c.status !== "待会诊")
-        throw new BadRequestException("已开始或完成的会诊不能删除");
+        throw new BadRequestException("Started or completed conferences cannot be deleted");
       await m.remove(c);
     });
-    await this.audit.record(u, "删除会诊", id);
-    return { message: "删除成功" };
+    await this.audit.record(u, "Delete conference", id);
+    return { message: "Deleted successfully" };
   }
 }

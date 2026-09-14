@@ -1,3 +1,4 @@
+const assertEnglishControls = require("./assert-english-controls");
 const assert = require("node:assert/strict");
 const path = require("node:path");
 module.exports = async function ({ base, doctor, reviewer }) {
@@ -30,7 +31,7 @@ module.exports = async function ({ base, doctor, reviewer }) {
     return p;
   }
   async function department(p, name) {
-    await p.getByRole("combobox", { name: "筛选科室", exact: true }).press("ArrowDown");
+    await p.getByRole("combobox", { name: "Filter department", exact: true }).press("ArrowDown");
     await p
       .locator(".ant-select-dropdown:visible .ant-select-item-option-content")
       .getByText(name, { exact: true })
@@ -42,17 +43,17 @@ module.exports = async function ({ base, doctor, reviewer }) {
     await host.goto("http://localhost:3000/conferences");
     await host
       .locator(".main-user")
-      .getByText("心血管内科 · 主治医师 · 普通医生", { exact: true })
+      .getByText("Cardiology · Attending Physician · Doctor", { exact: true })
       .waitFor();
-    await host.getByRole("button", { name: "发起会诊", exact: true }).click();
-    await host.getByLabel("会诊主题", { exact: true }).fill(title);
-    await department(host, "内分泌科");
+    await host.getByRole("button", { name: "Create conference", exact: true }).click();
+    await host.getByLabel("Topic", { exact: true }).fill(title);
+    await department(host, "Endocrinology");
     await host
       .getByRole("row")
       .filter({ hasText: "workflow_senior" })
       .getByRole("checkbox")
       .check();
-    await department(host, "呼吸内科");
+    await department(host, "Respiratory Medicine");
     await host
       .getByRole("row")
       .filter({ hasText: "workflow_stranger" })
@@ -62,43 +63,43 @@ module.exports = async function ({ base, doctor, reviewer }) {
     await selected.filter({ hasText: "workflow_senior" }).waitFor();
     await selected.filter({ hasText: "workflow_stranger" }).waitFor();
     await host
-      .getByLabel("病情摘要 / 会诊目的", { exact: true })
+      .getByLabel("Case summary / Conference purpose", { exact: true })
       .fill("联合会诊页面验收");
-    await host.getByRole("button", { name: "发送邀请", exact: true }).click();
+    await host.getByRole("button", { name: "Send invitations", exact: true }).click();
     await host.locator(".ant-modal-wrap:visible").waitFor({ state: "hidden" });
     const invited = await page(reviewer);
     await invited.goto("http://localhost:3000/conferences");
     await invited
       .locator(".main-user")
-      .getByText("内分泌科 · 主任医师 · 上级医生", { exact: true })
+      .getByText("Endocrinology · Chief Physician · Senior Doctor", { exact: true })
       .waitFor();
     await invited
       .getByRole("row")
       .filter({ hasText: title })
-      .getByRole("button", { name: "查看会诊" })
+      .getByRole("button", { name: "View conference" })
       .click();
-    await invited.getByRole("button", { name: "接受邀请" }).click();
+    await invited.getByRole("button", { name: "Accept invitation" }).click();
     await invited
       .locator(".ant-drawer")
-      .getByText("已接受", { exact: true })
+      .getByText("Accepted", { exact: true })
       .waitFor();
     await host
-      .getByRole("button", { name: "开始会诊" })
+      .getByRole("button", { name: "Start conference" })
       .click({ timeout: 20000 });
     await host
       .locator(".ant-drawer")
-      .getByText("进行中", { exact: true })
+      .getByText("In Progress", { exact: true })
       .waitFor();
     await invited.reload();
     await invited
       .getByRole("row")
       .filter({ hasText: title })
-      .getByRole("button", { name: "查看会诊" })
+      .getByRole("button", { name: "View conference" })
       .click();
     await invited
-      .getByRole("textbox", { name: "会诊意见", exact: true })
+      .getByRole("textbox", { name: "Conference opinion", exact: true })
       .fill("内分泌科联合意见页面验证");
-    await invited.getByRole("button", { name: "提交会诊意见" }).click();
+    await invited.getByRole("button", { name: "Submit opinion" }).click();
     await invited
       .getByText("内分泌科联合意见页面验证", { exact: true })
       .first()
@@ -106,16 +107,18 @@ module.exports = async function ({ base, doctor, reviewer }) {
     await host
       .getByText("内分泌科联合意见页面验证", { exact: true })
       .waitFor({ timeout: 20000 });
-    await host.getByRole("button", { name: "完成会诊", exact: true }).click();
+    await host.getByRole("button", { name: "Complete conference", exact: true }).click();
     await host
-      .getByRole("textbox", { name: "会诊总结", exact: true })
+      .getByRole("textbox", { name: "Conference summary", exact: true })
       .fill("联合会诊总结页面验证");
-    await host.getByRole("button", { name: "保存总结并完成" }).click();
+    await host.getByRole("button", { name: "Save summary and complete" }).click();
     await host.locator(".ant-modal-wrap:visible").waitFor({ state: "hidden" });
     await host
       .locator(".ant-drawer")
-      .getByText("已完成", { exact: true })
+      .getByText("Completed", { exact: true })
       .waitFor();
+    await assertEnglishControls(host);
+    await assertEnglishControls(invited);
     await host.screenshot({
       path: path.join(__dirname, "../../.runtime/joint-conference-ui.png"),
       fullPage: true,

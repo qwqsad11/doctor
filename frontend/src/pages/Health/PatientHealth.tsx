@@ -1,3 +1,4 @@
+import { displaySystemText } from "@/utils/labels";
 import { useEffect, useState } from "react";
 import {
   Alert,
@@ -64,7 +65,7 @@ export default function PatientHealthPage() {
       setData(await patientRequest<PatientHealth>(token));
       form.resetFields();
       form.setFieldsValue({ kind: "血压", measured_at: localDateTime() });
-      message.success("监测数据已上传，医生可以查看");
+      message.success("Measurements uploaded and available to your doctor");
     } catch (e) {
       if (!(e as { errorFields?: unknown }).errorFields)
         message.error(errorMessage(e));
@@ -74,29 +75,29 @@ export default function PatientHealthPage() {
   };
   return (
     <div style={{ maxWidth: 900, margin: "0 auto", padding: "24px 16px" }}>
-      <Typography.Title level={2}>我的健康管理</Typography.Title>
+      <Typography.Title level={2}>My Health Management</Typography.Title>
       {error && (
         <Alert
           type="error"
           showIcon
           message={error}
-          description="请联系负责医生获取新的患者链接。"
+          description="Contact your doctor for a new patient link."
         />
       )}
       {data && (
         <Space direction="vertical" size="large" style={{ width: "100%" }}>
           <Card title={data.patient_name + " · " + data.plan}>
             <Descriptions column={1}>
-              <Descriptions.Item label="健康目标">
-                {data.goals || "暂无"}
+              <Descriptions.Item label="Health goals">
+                {data.goals || "Not available"}
               </Descriptions.Item>
-              <Descriptions.Item label="健康指导">
-                {data.guidance || "暂无"}
+              <Descriptions.Item label="Health guidance">
+                {data.guidance || "Not available"}
               </Descriptions.Item>
-              <Descriptions.Item label="下次评估">
+              <Descriptions.Item label="Next assessment">
                 {data.next_assessment_at
                   ? formatDateTime(data.next_assessment_at)
-                  : "待安排"}
+                  : "Not scheduled"}
               </Descriptions.Item>
             </Descriptions>
           </Card>
@@ -105,7 +106,7 @@ export default function PatientHealthPage() {
               items={[
                 {
                   key: "upload",
-                  label: "上传监测",
+                  label: "Upload measurements",
                   children: (
                     <Form
                       form={form}
@@ -117,25 +118,26 @@ export default function PatientHealthPage() {
                     >
                       <MeasurementFields />
                       <Button type="primary" loading={busy} onClick={submit}>
-                        上传数据
+
+                        Upload data
                       </Button>
                     </Form>
                   ),
                 },
                 {
                   key: "messages",
-                  label: "健康提醒",
+                  label: "Health reminders",
                   children: (
                     <List
                       dataSource={data.entries.filter(
                         (e) => e.kind === "notification",
                       )}
                       pagination={{ pageSize: 10 }}
-                      locale={{ emptyText: "暂无提醒消息" }}
+                      locale={{ emptyText: "No reminders yet" }}
                       renderItem={(e) => (
                         <List.Item>
                           <List.Item.Meta
-                            title={e.data.message}
+                            title={displaySystemText(e.data.message)}
                             description={formatDateTime(e.created_at)}
                           />
                         </List.Item>
@@ -145,7 +147,7 @@ export default function PatientHealthPage() {
                 },
                 {
                   key: "history",
-                  label: "监测历史",
+                  label: "Measurement history",
                   children: <MeasurementTable entries={data.entries} />,
                 },
               ]}

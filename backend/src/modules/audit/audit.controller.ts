@@ -4,7 +4,7 @@ import { AuditService } from './audit.service';
 import { QueryAuditDto } from './dto/query-audit.dto';
 import { Roles } from '../../common/decorators/roles.decorator';
 
-@ApiTags('操作审计')
+@ApiTags("Audit Log")
 @ApiBearerAuth()
 @Controller('api/v1/audit')
 export class AuditController {
@@ -12,7 +12,7 @@ export class AuditController {
 
   @Get()
   @Roles('admin')
-  @ApiOperation({ summary: '审计日志列表（仅管理员）' })
+  @ApiOperation({ summary: "List audit logs (administrators only)" })
   findAll(@Query() query: QueryAuditDto) {
     return this.auditService.findAll(query);
   }

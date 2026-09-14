@@ -45,10 +45,10 @@ export class AuthService {
   async login(dto: LoginDto) {
     const user = await this.validateUser(dto.username, dto.password);
     if (!user) {
-      throw new UnauthorizedException('用户名或密码错误');
+      throw new UnauthorizedException("Incorrect username or password");
     }
     if (user.status !== 'active') {
-      throw new UnauthorizedException('账户当前不可登录');
+      throw new UnauthorizedException("This account cannot sign in");
     }
 
     const key = `${user.id}:${dto.factor || 'none'}`;
@@ -56,7 +56,7 @@ export class AuthService {
       return {
         mfa_required: true,
         factors: ['sms', 'email', 'face'],
-        demo_note: '演示环境不会发送短信或邮件；选择任一方式后使用演示码。',
+        demo_note: "The demo does not send text messages or emails. Choose a method and enter the demo code.",
       };
     }
     const expected = dto.factor === 'face' ? 'FACE-DEMO' : '123456';
@@ -65,7 +65,7 @@ export class AuthService {
       this.pendingMfa.set(key, { factor: dto.factor, expiresAt: Date.now() + 5 * 60_000 });
     }
     if (dto.verification_code !== expected) {
-      throw new UnauthorizedException('演示验证码或人脸口令不正确');
+      throw new UnauthorizedException("Incorrect demo verification code or face passphrase");
     }
     this.pendingMfa.delete(key);
 
@@ -81,10 +81,10 @@ export class AuthService {
     const { username, email, password, phone, real_name } = dto;
 
     const byUsername = await this.usersRepository.findOne({ where: { username } });
-    if (byUsername) throw new ConflictException('用户名已存在');
+    if (byUsername) throw new ConflictException("Username already exists");
 
     const byEmail = await this.usersRepository.findOne({ where: { email } });
-    if (byEmail) throw new ConflictException('邮箱已被注册');
+    if (byEmail) throw new ConflictException("Email address already registered");
 
     const password_hash = await this.hashPassword(password);
     const user = this.usersRepository.create({

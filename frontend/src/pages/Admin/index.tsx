@@ -1,3 +1,4 @@
+import { displayLabel } from "@/utils/labels";
 import React, { useEffect, useState } from "react";
 import {
   Button,
@@ -32,7 +33,7 @@ const ROLE_OPTIONS = [
   "doctor",
   "senior_doctor",
   "consultation_expert",
-].map((value) => ({ value, label: value }));
+].map((value) => ({ value, label: displayLabel(value) }));
 
 const AdminPage: React.FC = () => {
   const [users, setUsers] = useState<UserProfile[]>([]);
@@ -55,7 +56,7 @@ const AdminPage: React.FC = () => {
       setConsultations(consultationData.list);
       setConferences(conferenceData.list);
     } catch (e: any) {
-      message.error(e.response?.data?.message || "加载管理数据失败");
+      message.error(e.response?.data?.message || "Failed to load administration data");
     }
   };
 
@@ -66,10 +67,10 @@ const AdminPage: React.FC = () => {
   const updateRoles = async (user: UserProfile, roles: string[]) => {
     try {
       await usersApi.setRoles(user.id, roles);
-      message.success("角色已更新");
+      message.success("Roles updated");
       load();
     } catch (e: any) {
-      message.error(e.response?.data?.message || "更新角色失败");
+      message.error(e.response?.data?.message || "Failed to update roles");
     }
   };
 
@@ -82,35 +83,35 @@ const AdminPage: React.FC = () => {
         permissionType: "view",
         expiresAt: values.expiresAt.toISOString(),
       });
-      message.success("临时查看权限已授予");
+      message.success("Temporary view permission granted");
       form.resetFields();
       load();
     } catch (e: any) {
-      message.error(e.response?.data?.message || "授权失败");
+      message.error(e.response?.data?.message || "Failed to grant permission");
     }
   };
 
   const userColumns: ColumnsType<UserProfile> = [
     {
-      title: "用户",
+      title: "User",
       dataIndex: "username",
       render: (value, record) => record.real_name || value,
     },
-    { title: "邮箱", dataIndex: "email" },
+    { title: "Email", dataIndex: "email" },
     {
-      title: "科室",
+      title: "Department",
       dataIndex: "department",
       filters: [
         ...new Set(
           users.map((u) => u.department).filter((v): v is string => !!v),
         ),
-      ].map((value) => ({ text: value, value })),
+      ].map((value) => ({ text: displayLabel(value), value })),
       onFilter: (value, record) => record.department === value,
-      render: (v) => v || "未设置",
+      render: (v) => displayLabel(v || "Not set"),
     },
-    { title: "职称", dataIndex: "title", render: (v) => v || "未设置" },
+    { title: "Professional Title", dataIndex: "title", render: (v) => displayLabel(v || "Not set") },
     {
-      title: "角色",
+      title: "Roles",
       render: (_, user) => (
         <Select
           mode="multiple"
@@ -124,35 +125,35 @@ const AdminPage: React.FC = () => {
   ];
   const permissionColumns: ColumnsType<TempPermission> = [
     {
-      title: "被授权用户",
+      title: "User",
       dataIndex: "userId",
       render: (id) => users.find((u) => u.id === id)?.username || id,
     },
     {
-      title: "资源",
+      title: "Resource",
       dataIndex: "resourceId",
       render: (id) =>
         consultations.find((c) => c.id === id)?.consultation_no || id,
     },
     {
-      title: "权限",
+      title: "Permission",
       dataIndex: "permissionType",
-      render: () => <Tag color="blue">查看</Tag>,
+      render: () => <Tag color="blue">View</Tag>,
     },
-    { title: "到期时间", dataIndex: "expiresAt", render: formatDateTime },
+    { title: "Expires", dataIndex: "expiresAt", render: formatDateTime },
     {
-      title: "操作",
+      title: "Actions",
       render: (_, permission) => (
         <Popconfirm
-          title="确认撤销此权限？"
+          title="Revoke this permission?"
           onConfirm={async () => {
             await usersApi.revokeTempPermission(permission.id);
-            message.success("已撤销");
+            message.success("Revoked");
             load();
           }}
         >
           <Button type="link" danger>
-            撤销
+            Revoke
           </Button>
         </Popconfirm>
       ),
@@ -161,12 +162,12 @@ const AdminPage: React.FC = () => {
 
   return (
     <Space direction="vertical" size="middle" style={{ width: "100%" }}>
-      <Card title="管理授权" extra={<Tag color="gold">本地课程演示流程</Tag>}>
-        仅用于本地 course-demo 的角色和临时问诊查看权限管理；不会调用外部系统。
+      <Card title="Access Management" extra={<Tag color="gold">Local course demo</Tag>}>
+        Manage roles and temporary consultation view permissions for the local course demo only. No external systems are used.
       </Card>
       <Row gutter={[16, 16]}>
         <Col xs={24} xl={14}>
-          <Card title="用户与角色">
+          <Card title="Users and Roles">
             <Table
               rowKey="id"
               columns={userColumns}
@@ -176,11 +177,11 @@ const AdminPage: React.FC = () => {
           </Card>
         </Col>
         <Col xs={24} xl={10}>
-          <Card title="授予临时问诊查看权限">
+          <Card title="Grant Temporary Consultation View Permission">
             <Form form={form} layout="vertical">
               <Form.Item
                 name="userId"
-                label="专家用户"
+                label="Expert user"
                 rules={[{ required: true }]}
               >
                 <Select
@@ -188,13 +189,13 @@ const AdminPage: React.FC = () => {
                   optionFilterProp="label"
                   options={users.map((u) => ({
                     value: u.id,
-                    label: `${u.real_name || u.username} (${u.roles.join(", ")})`,
+                    label: `${u.real_name || u.username} (${u.roles.map(displayLabel).join(", ")})`,
                   }))}
                 />
               </Form.Item>
               <Form.Item
                 name="resourceId"
-                label="问诊资源"
+                label="Consultation resource"
                 rules={[{ required: true }]}
               >
                 <Select
@@ -202,41 +203,41 @@ const AdminPage: React.FC = () => {
                   optionFilterProp="label"
                   options={consultations.map((c) => ({
                     value: c.id,
-                    label: `${c.consultation_no} - ${c.patient_name} (${c.status})`,
+                    label: `${c.consultation_no} - ${c.patient_name} (${displayLabel(c.status)})`,
                   }))}
                 />
               </Form.Item>
               <Form.Item
                 name="expiresAt"
-                label="到期时间"
+                label="Expires"
                 rules={[{ required: true }]}
               >
                 <DatePicker showTime style={{ width: "100%" }} />
               </Form.Item>
-              <Form.Item name="reason" label="授权说明">
+              <Form.Item name="reason" label="Reason for access">
                 <Select
                   allowClear
                   options={[
-                    { value: "课程演示会诊支持", label: "课程演示会诊支持" },
-                    { value: "临时专家意见", label: "临时专家意见" },
+                    { value: "Course demo consultation support", label: "Course demo consultation support" },
+                    { value: "Temporary expert opinion", label: "Temporary expert opinion" },
                   ]}
                 />
               </Form.Item>
               <Button type="primary" onClick={grant}>
-                授予查看权限
+                Grant view permission
               </Button>
             </Form>
           </Card>
         </Col>
       </Row>
-      <Card title="可用资源">
+      <Card title="Available Resources">
         <Space wrap>
-          <Tag color="blue">问诊 {consultations.length}</Tag>
-          <Tag>远程会诊 {conferences.length}</Tag>
-          <span>权限严格限定为单个问诊；远程会诊仅作课程演示资源清单。</span>
+          <Tag color="blue">Consultations {consultations.length}</Tag>
+          <Tag>Remote Conferences {conferences.length}</Tag>
+          <span>Permissions are limited to one consultation. Remote conferences are listed for the course demo only.</span>
         </Space>
       </Card>
-      <Card title="活动中的临时权限">
+      <Card title="Active Temporary Permissions">
         <Table
           rowKey="id"
           columns={permissionColumns}

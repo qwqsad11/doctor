@@ -26,3 +26,12 @@ export const DEPARTMENTS = [
   "检验科",
   "麻醉科",
 ];
+
+// English labels also support searching legacy professional titles.
+export const PROFESSIONAL_TITLE_LABELS: Record<string, string> = {
+  "医师": "Physician",
+  "住院医师": "Resident Physician",
+  "主治医师": "Attending Physician",
+  "副主任医师": "Associate Chief Physician",
+  "主任医师": "Chief Physician",
+};

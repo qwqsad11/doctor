@@ -1,3 +1,4 @@
+import { displayLabel } from "@/utils/labels";
 import { useCallback, useEffect, useState } from "react";
 import {
   Alert,
@@ -154,7 +155,7 @@ export default function ConferencesPage() {
       setOpen(false);
       setDetail(d);
       setSelectedId(d.id);
-      message.success("会诊邀请已发送");
+      message.success("Conference invitations sent");
       void load();
     } catch (e) {
       if (!(e as { errorFields?: unknown }).errorFields)
@@ -168,7 +169,7 @@ export default function ConferencesPage() {
     try {
       const d = await operation();
       setDetail(d);
-      message.success("操作成功");
+      message.success("Operation completed");
       void load();
       return true;
     } catch (e) {
@@ -184,16 +185,16 @@ export default function ConferencesPage() {
     (host(detail) || participant?.response === "已接受");
   return (
     <Card
-      title="跨科室联合会诊"
+      title="Multidisciplinary Conferences"
       extra={
         <Button type="primary" onClick={openCreate}>
-          发起会诊
+          Create conference
         </Button>
       }
     >
       <Space wrap style={{ marginBottom: 16 }}>
         <Input.Search
-          placeholder="按患者 / 会诊主题搜索"
+          placeholder="Search by patient or conference topic"
           allowClear
           onSearch={(v) => {
             setKeyword(v);
@@ -201,9 +202,10 @@ export default function ConferencesPage() {
           }}
           style={{ width: 300 }}
         />
-        <Button onClick={load}>刷新</Button>
+        <Button onClick={load}>Refresh</Button>
         <Typography.Text type="secondary">
-          我发起或受邀的会诊 · 每 10 秒刷新
+
+          Conferences I initiated or was invited to · Refreshes every 10 seconds
         </Typography.Text>
       </Space>
       <Table
@@ -219,50 +221,50 @@ export default function ConferencesPage() {
           showSizeChanger: false,
         }}
         columns={[
-          { title: "主题", dataIndex: "topic" },
-          { title: "患者", dataIndex: "patient_name" },
+          { title: "Topic", dataIndex: "topic" },
+          { title: "Patient", dataIndex: "patient_name" },
           {
-            title: "发起医生",
+            title: "Initiating doctor",
             render: (_, r) => (
               <>
                 {r.initiator_name}
                 <div>
-                  <Tag>{r.initiator_department || "未设置科室"}</Tag>
+                  <Tag>{displayLabel(r.initiator_department || "Department not set")}</Tag>
                 </div>
               </>
             ),
           },
           {
-            title: "参会医生 / 科室",
+            title: "Doctors / Departments",
             render: (_, r) => (
               <Space wrap>
                 {r.participants?.length
                   ? r.participants.map((p) => (
                       <Tag key={p.id}>
-                        {p.name} · {p.department} · {p.response}
+                        {p.name} · {displayLabel(p.department)} · {displayLabel(p.response)}
                       </Tag>
                     ))
                   : r.experts.map((name, i) => (
-                      <Tag key={i}>{name}（历史记录）</Tag>
+                      <Tag key={i}>{name}(Historical record)</Tag>
                     ))}
               </Space>
             ),
           },
           {
-            title: "状态",
+            title: "Status",
             dataIndex: "status",
-            render: (v) => <Tag color={colors[v]}>{v}</Tag>,
+            render: (v) => <Tag color={colors[v]}>{displayLabel(v)}</Tag>,
           },
           {
-            title: "我的身份",
+            title: "My role",
             render: (_, r) =>
               r.initiator_id === user.id
-                ? "发起人"
-                : r.participants.find((p) => p.id === user.id)?.response ||
-                  "管理员查看",
+                ? "Initiator"
+                : displayLabel(r.participants.find((p) => p.id === user.id)?.response || "Administrator view") ||
+                  "Administrator view",
           },
           {
-            title: "操作",
+            title: "Actions",
             render: (_, r) => (
               <Button
                 type="link"
@@ -273,31 +275,32 @@ export default function ConferencesPage() {
                   setSelectedId(r.id);
                 }}
               >
-                查看会诊
+
+                View conference
               </Button>
             ),
           },
         ]}
       />
       <Modal
-        title="发起跨科室会诊"
+        title="Start multidisciplinary conference"
         open={open}
         onCancel={() => setOpen(false)}
         onOk={create}
         confirmLoading={busy}
         width={900}
-        okText="发送邀请"
+        okText="Send invitations"
         forceRender
       >
         <Form form={form} layout="vertical">
           <Form.Item
             name="topic"
-            label="会诊主题"
+            label="Topic"
             rules={[{ required: true, whitespace: true }]}
           >
             <Input maxLength={200} />
           </Form.Item>
-          <Form.Item name="patient_id" label="患者">
+          <Form.Item name="patient_id" label="Patient">
             <Select
               allowClear
               showSearch
@@ -310,13 +313,13 @@ export default function ConferencesPage() {
           </Form.Item>
           <Form.Item
             name="expert_ids"
-            label="已选参会医生（可跨多个科室）"
+            label="Selected doctors (multiple departments supported)"
             rules={[
               {
                 required: true,
                 type: "array",
                 min: 1,
-                message: "至少选择一名医生",
+                message: "Select at least one doctor",
               },
             ]}
           >
@@ -328,27 +331,27 @@ export default function ConferencesPage() {
                 label:
                   (d.real_name || d.username) +
                   " · " +
-                  (d.department || "未设置科室"),
+                  displayLabel(d.department || "Department not set"),
               }))}
-              placeholder="在下方医生列表中勾选"
+              placeholder="Select doctors from the list below"
             />
           </Form.Item>
           <Space wrap style={{ marginBottom: 12 }}>
             <Select
-              aria-label="筛选科室"
-              placeholder="全部科室"
+              aria-label="Filter department"
+              placeholder="All departments"
               allowClear
               showSearch
               value={department}
               style={{ width: 190 }}
-              options={departments.map((d) => ({ value: d, label: d }))}
+              options={departments.map((d) => ({ value: d, label: displayLabel(d) }))}
               onChange={(v) => {
                 setDepartment(v);
                 setDoctorPage(1);
               }}
             />
             <Input.Search
-              placeholder="搜索医生姓名 / 职称"
+              placeholder="Search by doctor name or title"
               allowClear
               onSearch={(v) => {
                 setSearch(v);
@@ -375,34 +378,34 @@ export default function ConferencesPage() {
               showSizeChanger: false,
             }}
             columns={[
-              { title: "医生", render: (_, d) => d.real_name || d.username },
+              { title: "Doctor", render: (_, d) => d.real_name || d.username },
               {
-                title: "科室",
+                title: "Department",
                 dataIndex: "department",
-                render: (v) => v || "未设置",
+                render: (v) => displayLabel(v || "Not set"),
               },
               {
-                title: "职称",
+                title: "Professional Title",
                 dataIndex: "title",
-                render: (v) => v || "未设置",
+                render: (v) => displayLabel(v || "Not set"),
               },
               {
-                title: "医院",
+                title: "Hospital",
                 dataIndex: "hospital",
-                render: (v) => v || "未设置",
+                render: (v) => displayLabel(v || "Not set"),
               },
             ]}
           />
-          <Form.Item name="scheduled_at" label="预约时间">
+          <Form.Item name="scheduled_at" label="Scheduled time">
             <Input type="datetime-local" />
           </Form.Item>
-          <Form.Item name="summary" label="病情摘要 / 会诊目的">
+          <Form.Item name="summary" label="Case summary / Conference purpose">
             <Input.TextArea rows={3} maxLength={10000} />
           </Form.Item>
         </Form>
       </Modal>
       <Drawer
-        title={detail?.topic || "会诊详情"}
+        title={detail?.topic || "Conference details"}
         open={!!selectedId}
         width={Math.min(900, window.innerWidth)}
         onClose={() => {
@@ -414,7 +417,7 @@ export default function ConferencesPage() {
         {detail && (
           <>
             <Space wrap style={{ marginBottom: 16 }}>
-              <Tag color={colors[detail.status]}>{detail.status}</Tag>
+              <Tag color={colors[detail.status]}>{displayLabel(detail.status)}</Tag>
               {detail.status === "待会诊" &&
                 participant?.response === "待响应" && (
                   <>
@@ -425,16 +428,18 @@ export default function ConferencesPage() {
                         act(() => jointApi.respond(detail.id, "accept"))
                       }
                     >
-                      接受邀请
+
+                      Accept invitation
                     </Button>
                     <Popconfirm
-                      title="确认拒绝本次邀请？"
+                      title="Decline this invitation?"
                       onConfirm={() =>
                         act(() => jointApi.respond(detail.id, "decline"))
                       }
                     >
                       <Button danger disabled={busy}>
-                        拒绝邀请
+
+                        Decline invitation
                       </Button>
                     </Popconfirm>
                   </>
@@ -451,7 +456,8 @@ export default function ConferencesPage() {
                     act(() => jointApi.update(detail.id, { status: "进行中" }))
                   }
                 >
-                  开始会诊
+
+                  Start conference
                 </Button>
               )}
               {host(detail) && detail.status === "进行中" && (
@@ -461,7 +467,8 @@ export default function ConferencesPage() {
                     setCompleteOpen(true);
                   }}
                 >
-                  完成会诊
+
+                  Complete conference
                 </Button>
               )}
             </Space>
@@ -471,29 +478,29 @@ export default function ConferencesPage() {
               !detail.participants.some((p) => p.response === "已接受") && (
                 <Alert
                   type="info"
-                  message="等待至少一名医生接受邀请后开始会诊"
+                  message="Wait for at least one doctor to accept before starting"
                   style={{ marginBottom: 16 }}
                 />
               )}
             <Descriptions bordered column={1} size="small">
-              <Descriptions.Item label="会诊编号">
+              <Descriptions.Item label="Conference ID">
                 {detail.conference_no}
               </Descriptions.Item>
-              <Descriptions.Item label="患者">
-                {detail.patient_name || "未关联患者"}
+              <Descriptions.Item label="Patient">
+                {detail.patient_name || "No patient linked"}
               </Descriptions.Item>
-              <Descriptions.Item label="发起医生">
+              <Descriptions.Item label="Initiating doctor">
                 {detail.initiator_name} ·{" "}
-                {detail.initiator_department || "未设置科室"}
+                {displayLabel(detail.initiator_department || "Department not set")}
               </Descriptions.Item>
-              <Descriptions.Item label="预约时间">
+              <Descriptions.Item label="Scheduled time">
                 {detail.scheduled_at
                   ? formatDateTime(detail.scheduled_at)
-                  : "未设置"}
+                  : "Not set"}
               </Descriptions.Item>
-              <Descriptions.Item label="会诊说明 / 总结">
+              <Descriptions.Item label="Conference notes / summary">
                 <span style={{ whiteSpace: "pre-wrap" }}>
-                  {detail.summary || "未填写"}
+                  {detail.summary || "Not provided"}
                 </span>
               </Descriptions.Item>
             </Descriptions>
@@ -504,11 +511,11 @@ export default function ConferencesPage() {
               dataSource={detail.participants}
               pagination={false}
               columns={[
-                { title: "参会医生", dataIndex: "name" },
-                { title: "科室", dataIndex: "department" },
-                { title: "职称", dataIndex: "title" },
+                { title: "Participating doctors", dataIndex: "name" },
+                { title: "Department", dataIndex: "department", render: displayLabel },
+                { title: "Professional Title", dataIndex: "title", render: displayLabel },
                 {
-                  title: "邀请状态",
+                  title: "Invitation status",
                   dataIndex: "response",
                   render: (v) => (
                     <Tag
@@ -520,7 +527,7 @@ export default function ConferencesPage() {
                             : "orange"
                       }
                     >
-                      {v}
+                      {displayLabel(v)}
                     </Tag>
                   ),
                 },
@@ -529,20 +536,20 @@ export default function ConferencesPage() {
             {!detail.participants.length && (
               <Alert
                 type="info"
-                message={"历史会诊专家：" + detail.experts.join("、")}
+                message={"Previous conference experts:" + detail.experts.join("、")}
               />
             )}
             <List
-              header="联合会诊意见"
+              header="Multidisciplinary opinions"
               dataSource={detail.opinions}
-              locale={{ emptyText: "暂无会诊意见" }}
+              locale={{ emptyText: "No opinions yet" }}
               renderItem={(o) => (
                 <List.Item>
                   <List.Item.Meta
                     title={
                       o.name +
                       " · " +
-                      o.department +
+                      displayLabel(o.department) +
                       " · " +
                       formatDateTime(o.created_at)
                     }
@@ -558,12 +565,12 @@ export default function ConferencesPage() {
             {canComment && (
               <>
                 <Input.TextArea
-                  aria-label="会诊意见"
+                  aria-label="Conference opinion"
                   value={opinion}
                   onChange={(e) => setOpinion(e.target.value)}
                   maxLength={5000}
                   rows={4}
-                  placeholder="填写本科室的会诊意见"
+                  placeholder="Enter your department's opinion"
                 />
                 <Button
                   style={{ marginTop: 12 }}
@@ -575,13 +582,14 @@ export default function ConferencesPage() {
                       setOpinion("");
                   }}
                 >
-                  提交会诊意见
+
+                  Submit opinion
                 </Button>
               </>
             )}
             {host(detail) && detail.status === "待会诊" && (
               <Popconfirm
-                title="删除此会诊并取消邀请？"
+                title="Delete this conference and cancel its invitations?"
                 onConfirm={async () => {
                   try {
                     await conferencesApi.remove(detail.id);
@@ -594,7 +602,8 @@ export default function ConferencesPage() {
                 }}
               >
                 <Button danger style={{ marginTop: 24 }}>
-                  删除会诊
+
+                  Delete conference
                 </Button>
               </Popconfirm>
             )}
@@ -602,14 +611,14 @@ export default function ConferencesPage() {
         )}
       </Drawer>
       <Modal
-        title="完成会诊"
+        title="Complete conference"
         open={completeOpen}
         onCancel={() => setCompleteOpen(false)}
         confirmLoading={busy}
-        okText="保存总结并完成"
+        okText="Save summary and complete"
         onOk={async () => {
           if (!summary.trim()) {
-            message.error("请填写会诊总结");
+            message.error("Enter a conference summary");
             return;
           }
           if (
@@ -622,12 +631,12 @@ export default function ConferencesPage() {
         }}
       >
         <Input.TextArea
-          aria-label="会诊总结"
+          aria-label="Conference summary"
           rows={6}
           maxLength={10000}
           value={summary}
           onChange={(e) => setSummary(e.target.value)}
-          placeholder="汇总各科室意见，填写最终会诊总结"
+          placeholder="Summarize the departments' opinions and enter the final conference summary"
         />
       </Modal>
     </Card>

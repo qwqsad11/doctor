@@ -27,7 +27,7 @@ export class PatientsService {
       doctor_id: this.isAdmin(user) ? null : user.userId,
     });
     const saved = await this.patientsRepository.save(patient);
-    await this.auditService.record(user, '新增患者', saved.name, '成功');
+    await this.auditService.record(user, "Add patient", saved.name, '成功');
     return saved;
   }
 
@@ -59,9 +59,9 @@ export class PatientsService {
 
   async findOne(id: string, user?: CurrentUserPayload) {
     const patient = await this.patientsRepository.findOne({ where: { id } });
-    if (!patient) throw new NotFoundException('患者不存在');
+    if (!patient) throw new NotFoundException("Patient not found");
     if (user && !this.isAdmin(user) && patient.doctor_id !== user.userId) {
-      throw new ForbiddenException('无权访问该患者档案');
+      throw new ForbiddenException("You do not have access to this patient profile");
     }
     return patient;
   }
@@ -70,15 +70,15 @@ export class PatientsService {
     const patient = await this.findOne(id, user);
     Object.assign(patient, dto);
     const saved = await this.patientsRepository.save(patient);
-    await this.auditService.record(user, '修改患者档案', saved.name, '成功');
+    await this.auditService.record(user, "Update patient profile", saved.name, '成功');
     return saved;
   }
 
   async remove(id: string, user: CurrentUserPayload) {
     const patient = await this.findOne(id, user);
     await this.patientsRepository.remove(patient);
-    await this.auditService.record(user, '删除患者', patient.name, '成功');
-    return { message: '删除成功' };
+    await this.auditService.record(user, "Delete patient", patient.name, '成功');
+    return { message: "Deleted successfully" };
   }
 
   private async generatePatientNo(): Promise<string> {

@@ -23,14 +23,14 @@ import {
   CurrentUserPayload,
 } from "../../common/decorators/current-user.decorator";
 
-@ApiTags("远程会诊")
+@ApiTags("Remote Conferences")
 @ApiBearerAuth()
 @Controller("api/v1/conferences")
 export class ConferencesController {
   constructor(private readonly conferencesService: ConferencesService) {}
 
   @Post()
-  @ApiOperation({ summary: "发起会诊" })
+  @ApiOperation({ summary: "Start conference" })
   create(
     @Body() dto: CreateConferenceDto,
     @CurrentUser() user: CurrentUserPayload,
@@ -39,7 +39,7 @@ export class ConferencesController {
   }
 
   @Get()
-  @ApiOperation({ summary: "会诊列表（分页 + 搜索）" })
+  @ApiOperation({ summary: "List conferences (pagination and search)" })
   findAll(
     @Query() query: QueryConferenceDto,
     @CurrentUser() user: CurrentUserPayload,
@@ -48,7 +48,7 @@ export class ConferencesController {
   }
 
   @Get(":id")
-  @ApiOperation({ summary: "会诊详情" })
+  @ApiOperation({ summary: "Conference details" })
   findOne(
     @Param("id", ParseUUIDPipe) id: string,
     @CurrentUser() user: CurrentUserPayload,
@@ -57,7 +57,7 @@ export class ConferencesController {
   }
 
   @Patch(":id")
-  @ApiOperation({ summary: "更新会诊（进入会诊/完成等状态流转）" })
+  @ApiOperation({ summary: "Update conference (start, complete, or change status)" })
   update(
     @Param("id", ParseUUIDPipe) id: string,
     @Body() dto: UpdateConferenceDto,
@@ -85,7 +85,7 @@ export class ConferencesController {
   }
 
   @Delete(":id")
-  @ApiOperation({ summary: "删除会诊" })
+  @ApiOperation({ summary: "Delete conference" })
   remove(
     @Param("id", ParseUUIDPipe) id: string,
     @CurrentUser() user: CurrentUserPayload,

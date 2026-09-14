@@ -18,44 +18,44 @@ import {
   CurrentUserPayload,
 } from '../../common/decorators/current-user.decorator';
 
-@ApiTags('医生社交')
+@ApiTags("Doctor Community")
 @ApiBearerAuth()
 @Controller('api/v1/social/posts')
 export class SocialController {
   constructor(private readonly socialService: SocialService) {}
 
   @Post()
-  @ApiOperation({ summary: '发布病例分享' })
+  @ApiOperation({ summary: "Publish case discussion" })
   create(@Body() dto: CreatePostDto, @CurrentUser() user: CurrentUserPayload) {
     return this.socialService.create(dto, user);
   }
 
   @Get()
-  @ApiOperation({ summary: '帖子列表（分页 + 搜索）' })
+  @ApiOperation({ summary: "List posts (pagination and search)" })
   findAll(@Query() query: QueryPostDto) {
     return this.socialService.findAll(query);
   }
 
   @Get(':id')
-  @ApiOperation({ summary: '帖子详情' })
+  @ApiOperation({ summary: "Post details" })
   findOne(@Param('id') id: string) {
     return this.socialService.findOne(id);
   }
 
   @Patch(':id')
-  @ApiOperation({ summary: '更新帖子' })
+  @ApiOperation({ summary: "Update post" })
   update(@Param('id') id: string, @Body() dto: UpdatePostDto) {
     return this.socialService.update(id, dto);
   }
 
   @Post(':id/like')
-  @ApiOperation({ summary: '点赞' })
+  @ApiOperation({ summary: "Like" })
   like(@Param('id') id: string) {
     return this.socialService.like(id);
   }
 
   @Delete(':id')
-  @ApiOperation({ summary: '删除帖子' })
+  @ApiOperation({ summary: "Delete post" })
   remove(@Param('id') id: string) {
     return this.socialService.remove(id);
   }

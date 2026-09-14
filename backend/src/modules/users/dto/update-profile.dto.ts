@@ -31,7 +31,7 @@ export class UpdateProfileDto {
   bio?: string;
 
   @IsOptional()
-  @IsEmail({}, { message: '邮箱格式不正确' })
+  @IsEmail({}, { message: "Enter a valid email address" })
   email?: string;
 
   @IsOptional()

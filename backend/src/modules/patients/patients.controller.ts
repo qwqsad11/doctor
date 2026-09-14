@@ -18,20 +18,20 @@ import {
   CurrentUserPayload,
 } from '../../common/decorators/current-user.decorator';
 
-@ApiTags('患者管理')
+@ApiTags("Patients")
 @ApiBearerAuth()
 @Controller('api/v1/patients')
 export class PatientsController {
   constructor(private readonly patientsService: PatientsService) {}
 
   @Post()
-  @ApiOperation({ summary: '新增患者' })
+  @ApiOperation({ summary: "Add patient" })
   create(@Body() dto: CreatePatientDto, @CurrentUser() user: CurrentUserPayload) {
     return this.patientsService.create(dto, user);
   }
 
   @Get()
-  @ApiOperation({ summary: '患者列表（分页 + 搜索）' })
+  @ApiOperation({ summary: "List patients (pagination and search)" })
   findAll(
     @Query() query: QueryPatientDto,
     @CurrentUser() user: CurrentUserPayload,
@@ -40,13 +40,13 @@ export class PatientsController {
   }
 
   @Get(':id')
-  @ApiOperation({ summary: '患者详情' })
+  @ApiOperation({ summary: "Patient details" })
   findOne(@Param('id') id: string, @CurrentUser() user: CurrentUserPayload) {
     return this.patientsService.findOne(id, user);
   }
 
   @Patch(':id')
-  @ApiOperation({ summary: '更新患者' })
+  @ApiOperation({ summary: "Update patient" })
   update(
     @Param('id') id: string,
     @Body() dto: UpdatePatientDto,
@@ -56,7 +56,7 @@ export class PatientsController {
   }
 
   @Delete(':id')
-  @ApiOperation({ summary: '删除患者' })
+  @ApiOperation({ summary: "Delete patient" })
   remove(@Param('id') id: string, @CurrentUser() user: CurrentUserPayload) {
     return this.patientsService.remove(id, user);
   }

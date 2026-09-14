@@ -1,3 +1,4 @@
+import { displayLabel, displaySystemText } from "@/utils/labels";
 import { useCallback, useEffect, useState } from "react";
 import {
   Alert,
@@ -40,7 +41,7 @@ const colors: Record<string, string> = {
   已退回: "red",
 };
 const options = (values: string[]) =>
-  values.map((value) => ({ value, label: value }));
+  values.map((value) => ({ value, label: displayLabel(value) }));
 export default function EmrPage() {
   const { user } = useAuth();
   const [list, setList] = useState<Emr[]>([]);
@@ -143,7 +144,7 @@ export default function EmrPage() {
       const d = await emrWorkflow.save(editor?.id, values);
       setEditor(null);
       setDetail(d);
-      message.success("病历已保存");
+      message.success("Medical record saved");
       void load();
     } catch (e) {
       if (!(e as { errorFields?: unknown }).errorFields)
@@ -183,7 +184,7 @@ export default function EmrPage() {
       else d = await emrWorkflow.order(detail.id, v, order?.id);
       setDetail(d);
       setAction(null);
-      message.success("操作成功");
+      message.success("Operation completed");
       void load();
     } catch (e) {
       if (!(e as { errorFields?: unknown }).errorFields)
@@ -197,7 +198,7 @@ export default function EmrPage() {
     setBusy(true);
     try {
       setDetail(await emrWorkflow.archive(detail.id));
-      message.success("病历已归档");
+      message.success("Medical record archived");
       void load();
     } catch (e) {
       message.error(errorMessage(e));
@@ -207,21 +208,21 @@ export default function EmrPage() {
   };
   return (
     <Card
-      title="电子病历"
+      title="Medical Records"
       extra={
         <Button
           type="primary"
           icon={<PlusOutlined />}
           onClick={() => openEditor()}
         >
-          新建病历
+          Create Medical Record
         </Button>
       }
     >
       <Space wrap style={{ marginBottom: 16 }}>
         <Input.Search
-          aria-label="搜索病历"
-          placeholder="患者、病历编号或诊断"
+          aria-label="Search records"
+          placeholder="Patient, record ID, or diagnosis"
           allowClear
           onSearch={(v) => {
             setKeyword(v);
@@ -230,8 +231,8 @@ export default function EmrPage() {
           style={{ width: 300 }}
         />
         <Select
-          aria-label="病历状态"
-          placeholder="全部状态"
+          aria-label="Record status"
+          placeholder="All statuses"
           allowClear
           options={options(Object.keys(colors))}
           style={{ width: 150 }}
@@ -241,7 +242,7 @@ export default function EmrPage() {
             setPage(1);
           }}
         />
-        <Button onClick={load}>刷新</Button>
+        <Button onClick={load}>Refresh</Button>
       </Space>
       <Table
         rowKey="id"
@@ -256,29 +257,30 @@ export default function EmrPage() {
           showSizeChanger: false,
         }}
         columns={[
-          { title: "编号", dataIndex: "emr_no", ellipsis: true, width: 170 },
-          { title: "患者", dataIndex: "patient_name" },
-          { title: "类型", dataIndex: "type" },
-          { title: "诊断", dataIndex: "diagnosis", ellipsis: true },
-          { title: "医生", dataIndex: "doctor_name" },
+          { title: "ID", dataIndex: "emr_no", ellipsis: true, width: 170 },
+          { title: "Patient", dataIndex: "patient_name" },
+          { title: "Type", dataIndex: "type", render: displayLabel },
+          { title: "Diagnosis", dataIndex: "diagnosis", ellipsis: true },
+          { title: "Doctor", dataIndex: "doctor_name" },
           {
-            title: "状态",
+            title: "Status",
             dataIndex: "status",
-            render: (v) => <Tag color={colors[v]}>{v}</Tag>,
+            render: (v) => <Tag color={colors[v]}>{displayLabel(v)}</Tag>,
           },
-          { title: "更新", dataIndex: "updated_at", render: formatDateTime },
+          { title: "Updated", dataIndex: "updated_at", render: formatDateTime },
           {
-            title: "操作",
+            title: "Actions",
             render: (_, r) => (
               <Button type="link" onClick={() => showDetail(r.id)}>
-                查看 / 处理
+
+                View / Manage
               </Button>
             ),
           },
         ]}
       />
       <Drawer
-        title={detail ? detail.patient_name + " · " + detail.type : "病历详情"}
+        title={detail ? detail.patient_name + " · " + displayLabel(detail.type) : "Medical Record Details"}
         width={Math.min(980, window.innerWidth)}
         open={!!detail}
         onClose={() => setDetail(null)}
@@ -286,27 +288,30 @@ export default function EmrPage() {
         {detail && (
           <>
             <Space wrap style={{ marginBottom: 16 }}>
-              <Tag color={colors[detail.status]}>{detail.status}</Tag>
+              <Tag color={colors[detail.status]}>{displayLabel(detail.status)}</Tag>
               {editable && (
                 <>
-                  <Button onClick={() => openEditor(detail)}>编辑病历</Button>
+                  <Button onClick={() => openEditor(detail)}>Edit Medical Record</Button>
                   <Button type="primary" onClick={() => openAction("submit")}>
-                    提交审核
+
+                    Submit for review
                   </Button>
                 </>
               )}
               {canReview && (
                 <Button type="primary" onClick={() => openAction("review")}>
-                  审核病历
+
+                  Review record
                 </Button>
               )}
               {canAuthor && detail.status === "已审核" && (
                 <Popconfirm
-                  title="归档后病历及医嘱将锁定，确认归档？"
+                  title="Archiving locks the record and its orders. Archive now?"
                   onConfirm={archive}
                 >
                   <Button type="primary" loading={busy}>
-                    归档病历
+
+                    Archive record
                   </Button>
                 </Popconfirm>
               )}
@@ -314,7 +319,7 @@ export default function EmrPage() {
                 detail.orders.length === 0 &&
                 detail.review_history.length === 0 && (
                   <Popconfirm
-                    title="删除此草稿？"
+                    title="Delete this draft?"
                     onConfirm={async () => {
                       try {
                         await emrApi.remove(detail.id);
@@ -325,7 +330,7 @@ export default function EmrPage() {
                       }
                     }}
                   >
-                    <Button danger>删除草稿</Button>
+                    <Button danger>Delete draft</Button>
                   </Popconfirm>
                 )}
             </Space>
@@ -334,7 +339,7 @@ export default function EmrPage() {
                 type="success"
                 showIcon
                 message={
-                  "已归档 · " +
+                  "Archived · " +
                   formatDateTime(detail.archived_at || detail.updated_at)
                 }
                 style={{ marginBottom: 16 }}
@@ -344,31 +349,31 @@ export default function EmrPage() {
               items={[
                 {
                   key: "record",
-                  label: "病历内容",
+                  label: "Record Content",
                   children: (
                     <Descriptions column={1} bordered size="small">
-                      <Descriptions.Item label="编号">
+                      <Descriptions.Item label="ID">
                         {detail.emr_no}
                       </Descriptions.Item>
-                      <Descriptions.Item label="作者 / 审核人">
+                      <Descriptions.Item label="Author / Reviewer">
                         {detail.doctor_name} /{" "}
-                        {detail.reviewer_name || "尚未指定"}
+                        {detail.reviewer_name || "Not assigned"}
                       </Descriptions.Item>
-                      <Descriptions.Item label="诊断">
-                        {detail.diagnosis || "未填写"}
+                      <Descriptions.Item label="Diagnosis">
+                        {detail.diagnosis || "Not provided"}
                       </Descriptions.Item>
                       {Object.entries(detail.structured_content).map(
                         ([label, value]) => (
-                          <Descriptions.Item key={label} label={label}>
+                          <Descriptions.Item key={label} label={displayLabel(label)}>
                             <span style={{ whiteSpace: "pre-wrap" }}>
-                              {value || "未填写"}
+                              {value || "Not provided"}
                             </span>
                           </Descriptions.Item>
                         ),
                       )}
-                      <Descriptions.Item label="补充病历">
+                      <Descriptions.Item label="Additional notes">
                         <span style={{ whiteSpace: "pre-wrap" }}>
-                          {detail.content || "无"}
+                          {detail.content || "None"}
                         </span>
                       </Descriptions.Item>
                     </Descriptions>
@@ -376,7 +381,7 @@ export default function EmrPage() {
                 },
                 {
                   key: "orders",
-                  label: "医嘱（" + detail.orders.length + "）",
+                  label: "Orders (" + detail.orders.length + ")",
                   children: (
                     <>
                       {editable && (
@@ -385,7 +390,8 @@ export default function EmrPage() {
                           onClick={() => openAction("order")}
                           style={{ marginBottom: 16 }}
                         >
-                          开具医嘱
+
+                          Create order
                         </Button>
                       )}
                       <Table
@@ -398,9 +404,9 @@ export default function EmrPage() {
                               items={r.history.map((h) => ({
                                 children: (
                                   <>
-                                    <b>{h.action}</b> · {h.actor} ·{" "}
+                                    <b>{displayLabel(h.action)}</b> · {h.actor} ·{" "}
                                     {formatDateTime(h.at)}
-                                    <div>{h.detail}</div>
+                                    <div>{displaySystemText(h.detail)}</div>
                                   </>
                                 ),
                               }))}
@@ -408,20 +414,20 @@ export default function EmrPage() {
                           ),
                         }}
                         columns={[
-                          { title: "类别", dataIndex: "category" },
-                          { title: "名称", dataIndex: "name" },
-                          { title: "执行说明", dataIndex: "instruction" },
+                          { title: "Category", dataIndex: "category", render: displayLabel },
+                          { title: "Name", dataIndex: "name" },
+                          { title: "Instructions", dataIndex: "instruction" },
                           {
-                            title: "状态",
+                            title: "Status",
                             dataIndex: "status",
                             render: (v) => (
                               <Tag color={v === "执行中" ? "blue" : "default"}>
-                                {v}
+                                {displayLabel(v)}
                               </Tag>
                             ),
                           },
                           {
-                            title: "操作",
+                            title: "Actions",
                             render: (_, r) =>
                               editable && r.status === "执行中" ? (
                                 <Space>
@@ -429,14 +435,16 @@ export default function EmrPage() {
                                     type="link"
                                     onClick={() => openAction("order", r)}
                                   >
-                                    修改
+
+                                    Edit
                                   </Button>
                                   <Button
                                     type="link"
                                     danger
                                     onClick={() => openAction("stop", r)}
                                   >
-                                    停止
+
+                                    Stop
                                   </Button>
                                 </Space>
                               ) : (
@@ -450,25 +458,25 @@ export default function EmrPage() {
                 },
                 {
                   key: "history",
-                  label: "审核记录",
+                  label: "Review history",
                   children: detail.review_history.length ? (
                     <Timeline
                       items={detail.review_history.map((h) => ({
                         children: (
                           <>
                             <Typography.Text strong>
-                              {h.action} · {h.actor}
+                              {displayLabel(h.action)} · {h.actor}
                             </Typography.Text>
                             <div>{formatDateTime(h.at)}</div>
                             <p style={{ whiteSpace: "pre-wrap" }}>
-                              {h.comment}
+                              {displaySystemText(h.comment)}
                             </p>
                           </>
                         ),
                       }))}
                     />
                   ) : (
-                    <Empty description="尚未提交审核" />
+                    <Empty description="Not submitted for review" />
                   ),
                 },
               ]}
@@ -477,13 +485,13 @@ export default function EmrPage() {
         )}
       </Drawer>
       <Modal
-        title={editor?.id ? "编辑病历" : "新建病历"}
+        title={editor?.id ? "Edit Medical Record" : "Create Medical Record"}
         open={!!editor}
         onCancel={() => setEditor(null)}
         onOk={save}
         confirmLoading={busy}
         width={800}
-        okText="保存草稿"
+        okText="Save draft"
         destroyOnClose
       >
         <Form form={form} layout="vertical">
@@ -491,7 +499,7 @@ export default function EmrPage() {
             <Col span={12}>
               <Form.Item
                 name="patient_id"
-                label="患者"
+                label="Patient"
                 rules={[{ required: true }]}
               >
                 <Select
@@ -508,13 +516,13 @@ export default function EmrPage() {
             <Col span={12}>
               <Form.Item
                 name="template_id"
-                label="结构化模板"
+                label="Structured template"
                 rules={[{ required: true }]}
               >
                 <Select
                   options={templates.map((t) => ({
                     value: t.id,
-                    label: t.name,
+                    label: displayLabel(t.name),
                   }))}
                   onChange={(id) => {
                     const t = templates.find((x) => x.id === id);
@@ -533,19 +541,19 @@ export default function EmrPage() {
           <Form.Item name="type" hidden>
             <Input />
           </Form.Item>
-          <Form.Item name="diagnosis" label="诊断" rules={[{ max: 5000 }]}>
+          <Form.Item name="diagnosis" label="Diagnosis" rules={[{ max: 5000 }]}>
             <Input.TextArea rows={2} maxLength={5000} />
           </Form.Item>
           <Row gutter={16}>
             {template?.fields.map((field) => (
               <Col xs={24} md={12} key={field}>
-                <Form.Item name={["structured_content", field]} label={field}>
+                <Form.Item name={["structured_content", field]} label={displayLabel(field)}>
                   <Input.TextArea rows={2} maxLength={5000} />
                 </Form.Item>
               </Col>
             ))}
           </Row>
-          <Form.Item name="content" label="补充病历内容">
+          <Form.Item name="content" label="Additional record content">
             <Input.TextArea rows={3} maxLength={30000} />
           </Form.Item>
         </Form>
@@ -553,17 +561,17 @@ export default function EmrPage() {
       <Modal
         title={
           {
-            submit: "提交上级审核",
-            review: "审核病历",
-            order: order ? "修改医嘱" : "开具医嘱",
-            stop: "停止医嘱",
+            submit: "Submit for senior review",
+            review: "Review record",
+            order: order ? "Edit order" : "Create order",
+            stop: "Stop order",
           }[action || "submit"]
         }
         open={!!action}
         onCancel={() => setAction(null)}
         onOk={applyAction}
         confirmLoading={busy}
-        okText="确认"
+        okText="Confirm"
         destroyOnClose
       >
         <Form form={actionForm} layout="vertical">
@@ -572,12 +580,12 @@ export default function EmrPage() {
               {!reviewers.length && (
                 <Alert
                   type="info"
-                  message="暂无可选上级医生，请在管理授权中为另一位医生赋予 senior_doctor 角色。"
+                  message="No senior doctors available. Assign the Senior Doctor role to another doctor in Access Management."
                 />
               )}
               <Form.Item
                 name="reviewer_id"
-                label="上级医生"
+                label="Senior doctor"
                 rules={[{ required: true }]}
               >
                 <Select
@@ -593,19 +601,19 @@ export default function EmrPage() {
             <>
               <Form.Item
                 name="decision"
-                label="审核结果"
+                label="Review decision"
                 rules={[{ required: true }]}
               >
                 <Select
                   options={[
-                    { value: "approve", label: "通过最终审核" },
-                    { value: "reject", label: "退回修改" },
+                    { value: "approve", label: "Approve final review" },
+                    { value: "reject", label: "Return for changes" },
                   ]}
                 />
               </Form.Item>
               <Form.Item
                 name="comment"
-                label="审核意见"
+                label="Review comments"
                 rules={[{ required: true, whitespace: true }]}
               >
                 <Input.TextArea maxLength={2000} rows={4} />
@@ -616,21 +624,21 @@ export default function EmrPage() {
             <>
               <Form.Item
                 name="category"
-                label="医嘱类别"
+                label="Order category"
                 rules={[{ required: true }]}
               >
                 <Select options={options(["药物", "检查", "检验"])} />
               </Form.Item>
               <Form.Item
                 name="name"
-                label="医嘱名称"
+                label="Order name"
                 rules={[{ required: true, whitespace: true }]}
               >
                 <Input maxLength={200} />
               </Form.Item>
               <Form.Item
                 name="instruction"
-                label="执行说明（剂量、频次、途径或检查要求）"
+                label="Instructions (dose, frequency, route, or examination requirements)"
                 rules={[{ required: true, whitespace: true }]}
               >
                 <Input.TextArea rows={4} maxLength={2000} />
@@ -640,7 +648,7 @@ export default function EmrPage() {
           {action === "stop" && (
             <Form.Item
               name="reason"
-              label="停止原因"
+              label="Reason for stopping"
               rules={[{ required: true, whitespace: true }]}
             >
               <Input.TextArea rows={3} maxLength={500} />

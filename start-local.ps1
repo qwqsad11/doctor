@@ -11,7 +11,7 @@ if ($LASTEXITCODE -ne 0) {
 }
 foreach ($service in @(
     @{ Name = 'backend'; Port = 3001; Args = @('dist/main.js') },
-    @{ Name = 'frontend'; Port = 3000; Args = @('node_modules/vite/bin/vite.js', 'preview', '--host', '127.0.0.1', '--port', '3000', '--strictPort') }
+    @{ Name = 'frontend'; Port = 3000; Args = @('node_modules/vite/bin/vite.js', 'preview', '--host', '0.0.0.0', '--port', '3000', '--strictPort') }
 )) {
     $listener = Get-NetTCPConnection -State Listen -LocalPort $service.Port -ErrorAction SilentlyContinue
     if ($listener) {

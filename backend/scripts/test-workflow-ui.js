@@ -1,3 +1,4 @@
+const assertEnglishControls = require("./assert-english-controls");
 const assert = require("node:assert/strict");
 const path = require("node:path");
 module.exports = async function browserRegression({ base, doctor, reviewer }) {
@@ -45,64 +46,65 @@ module.exports = async function browserRegression({ base, doctor, reviewer }) {
   try {
     const page = await context(doctor);
     await page.goto("http://localhost:3000/emr");
-    await page.getByRole("button", { name: /新建病历/ }).click();
-    await pick(page, "患者", "回归验证患者");
-    await page.getByLabel("诊断", { exact: true }).fill("浏览器流程验证");
-    await page.getByLabel("主诉", { exact: true }).fill("结构化填写验证");
-    await page.getByRole("button", { name: "保存草稿" }).click();
+    await page.getByRole("button", { name: "Create Medical Record" }).click();
+    await pick(page, "Patient", "回归验证患者");
+    await page.getByLabel("Diagnosis", { exact: true }).fill("浏览器流程验证");
+    await page.getByLabel("Chief complaint", { exact: true }).fill("结构化填写验证");
+    await page.getByRole("button", { name: "Save draft" }).click();
     await wait(page, "浏览器流程验证");
-    await page.getByRole("tab", { name: /医嘱/ }).click();
-    await page.getByRole("button", { name: "开具医嘱", exact: true }).click();
-    await page.getByLabel("医嘱名称", { exact: true }).fill("页面医嘱验证");
+    await page.getByRole("tab", { name: /Orders/ }).click();
+    await page.getByRole("button", { name: "Create order", exact: true }).click();
+    await page.getByLabel("Order name", { exact: true }).fill("页面医嘱验证");
     await page
-      .getByLabel("执行说明（剂量、频次、途径或检查要求）", { exact: true })
+      .getByLabel("Instructions (dose, frequency, route, or examination requirements)", { exact: true })
       .fill("仅用于软件功能测试");
-    await page.getByRole("button", { name: /确\s*认/, exact: true }).click();
+    await page.getByRole("button", { name: /Confirm/, exact: true }).click();
     await wait(page, "页面医嘱验证");
+    await assertEnglishControls(page);
     await page.screenshot({
       path: path.join(__dirname, "../../.runtime/emr-ui.png"),
       fullPage: true, animations: "disabled",
     });
-    await page.getByRole("button", { name: "提交审核", exact: true }).click();
-    await pick(page, "上级医生", "workflow_senior");
-    await page.getByRole("button", { name: /确\s*认/, exact: true }).click();
+    await page.getByRole("button", { name: "Submit for review", exact: true }).click();
+    await pick(page, "Senior doctor", "workflow_senior");
+    await page.getByRole("button", { name: /Confirm/, exact: true }).click();
     await page
       .locator(".ant-drawer")
-      .getByText("待审核", { exact: true })
+      .getByText("Pending Review", { exact: true })
       .waitFor();
     const seniorPage = await context(reviewer);
     await seniorPage.goto("http://localhost:3000/emr");
     const row = seniorPage
       .getByRole("row")
       .filter({ hasText: "浏览器流程验证" });
-    await row.getByRole("button", { name: "查看 / 处理" }).click();
+    await row.getByRole("button", { name: "View / Manage" }).click();
     await seniorPage
-      .getByRole("button", { name: "审核病历", exact: true })
+      .getByRole("button", { name: "Review record", exact: true })
       .click();
     await seniorPage
-      .getByLabel("审核意见", { exact: true })
+      .getByLabel("Review comments", { exact: true })
       .fill("页面审核流程通过");
     await seniorPage
-      .getByRole("button", { name: /确\s*认/, exact: true })
+      .getByRole("button", { name: /Confirm/, exact: true })
       .click();
     await seniorPage
       .locator(".ant-drawer")
-      .getByText("已审核", { exact: true })
+      .getByText("Reviewed", { exact: true })
       .waitFor();
     await page.reload();
     await page
       .getByRole("row")
       .filter({ hasText: "浏览器流程验证" })
-      .getByRole("button", { name: "查看 / 处理" })
+      .getByRole("button", { name: "View / Manage" })
       .click();
-    await page.getByRole("button", { name: "归档病历" }).click();
-    await page.getByRole("button", { name: /确\s*定/, exact: true }).click();
+    await page.getByRole("button", { name: "Archive record" }).click();
+    await page.getByRole("button", { name: "OK", exact: true }).click();
     await page
       .locator(".ant-drawer")
-      .getByText("已归档", { exact: true })
+      .getByText("Archived", { exact: true })
       .waitFor();
     assert.equal(
-      await page.getByRole("button", { name: "编辑病历" }).count(),
+      await page.getByRole("button", { name: "Edit Medical Record" }).count(),
       0,
     );
     console.log(
@@ -113,54 +115,56 @@ module.exports = async function browserRegression({ base, doctor, reviewer }) {
     await page
       .getByRole("row")
       .filter({ hasText: "调整后的计划" })
-      .getByRole("button", { name: "查看 / 管理" })
+      .getByRole("button", { name: "View / Manage" })
       .click();
-    await page.getByRole("tab", { name: "患者入口" }).click();
-    await page.getByRole("button", { name: "生成 / 更新患者链接" }).click();
+    await page.getByRole("tab", { name: "Patient portal" }).click();
+    await page.getByRole("button", { name: "Generate / Renew patient link" }).click();
     const url = await page
-      .getByRole("link", { name: "打开患者入口" })
+      .getByRole("link", { name: "Open patient portal" })
       .getAttribute("href");
     const patientPage = await context(null, true);
     await patientPage.goto(url);
-    await pick(patientPage, "监测项目", "血糖");
-    await patientPage.getByRole("spinbutton", { name: /血糖/ }).fill("5.8");
+    await pick(patientPage, "Measurement type", "Blood glucose");
+    await patientPage.getByRole("spinbutton", { name: /Blood glucose/ }).fill("5.8");
     await patientPage
-      .getByLabel("设备 / 数据来源", { exact: true })
+      .getByLabel("Device / Data source", { exact: true })
       .fill("患者页面测试");
-    await patientPage.getByRole("button", { name: "上传数据" }).click();
-    await wait(patientPage, "监测数据已上传，医生可以查看");
-    await patientPage.getByRole("tab", { name: "监测历史" }).click();
+    await patientPage.getByRole("button", { name: "Upload data" }).click();
+    await wait(patientPage, "Measurements uploaded and available to your doctor");
+    await patientPage.getByRole("tab", { name: "Measurement history" }).click();
     await patientPage.getByText("患者页面测试", { exact: true }).waitFor();
+    await assertEnglishControls(patientPage);
     await patientPage.screenshot({
       path: path.join(__dirname, "../../.runtime/patient-health-ui.png"),
       fullPage: true, animations: "disabled",
     });
-    await page.getByRole("tab", { name: "健康监测" }).click();
+    await page.getByRole("tab", { name: "Health monitoring" }).click();
     await page
       .getByText("患者页面测试", { exact: true })
       .waitFor({ timeout: 20000 });
-    await page.getByRole("button", { name: "新增健康评估" }).click();
-    await page.getByLabel("评估结论", { exact: true }).fill("页面评估测试完成");
+    await page.getByRole("button", { name: "Add health assessment" }).click();
+    await page.getByLabel("Assessment conclusion", { exact: true }).fill("页面评估测试完成");
     await page
-      .getByLabel("调整后的健康建议（同步给患者）", { exact: true })
+      .getByLabel("Updated health advice (shared with the patient)", { exact: true })
       .fill("来自页面的新健康建议");
-    await page.getByRole("button", { name: /保\s*存/, exact: true }).click();
+    await page.getByRole("button", { name: "Save", exact: true }).click();
     await page.locator(".ant-modal-wrap:visible").waitFor({ state: "hidden" });
-    await page.getByRole("tab", { name: "评估记录" }).click();
-    await page.getByText("评估：页面评估测试完成", { exact: true }).waitFor();
-    await page.getByRole("tab", { name: "提醒与消息" }).click();
-    await page.getByRole("button", { name: "设置提醒任务" }).click();
-    await page.getByLabel("提醒内容", { exact: true }).fill("页面提醒测试");
-    await page.getByRole("button", { name: /保\s*存/, exact: true }).click();
+    await page.getByRole("tab", { name: "Assessment history" }).click();
+    await page.getByText("Assessment:页面评估测试完成", { exact: true }).waitFor();
+    await page.getByRole("tab", { name: "Reminders and messages" }).click();
+    await page.getByRole("button", { name: "Schedule reminder" }).click();
+    await page.getByLabel("Reminder message", { exact: true }).fill("页面提醒测试");
+    await page.getByRole("button", { name: "Save", exact: true }).click();
     await page.locator(".ant-modal-wrap:visible").waitFor({ state: "hidden" });
-    await page.getByRole("row").filter({ hasText: "页面提醒测试" }).getByText("待执行", { exact: true }).waitFor();
+    await page.getByRole("row").filter({ hasText: "页面提醒测试" }).getByText("Pending", { exact: true }).waitFor();
+    await assertEnglishControls(page);
     await page.screenshot({
       path: path.join(__dirname, "../../.runtime/health-ui.png"),
       fullPage: true, animations: "disabled",
     });
-    await patientPage.getByRole("tab", { name: "健康提醒" }).click();
+    await patientPage.getByRole("tab", { name: "Health reminders" }).click();
     await patientPage
-      .getByText("健康评估建议：来自页面的新健康建议", { exact: true })
+      .getByText("Health assessment advice: 来自页面的新健康建议", { exact: true })
       .waitFor({ timeout: 20000 });
     checkNoErrors();
     console.log(

@@ -1,7 +1,7 @@
 export const EMR_TEMPLATES = [
   {
     id: "outpatient",
-    name: "门诊病历模板",
+    name: "Outpatient record template",
     type: "门诊病历",
     fields: [
       "主诉",
@@ -15,7 +15,7 @@ export const EMR_TEMPLATES = [
   },
   {
     id: "inpatient",
-    name: "住院病历模板",
+    name: "Inpatient record template",
     type: "住院病历",
     fields: [
       "主诉",
@@ -30,7 +30,7 @@ export const EMR_TEMPLATES = [
   },
   {
     id: "checkup",
-    name: "体检报告模板",
+    name: "Physical examination report template",
     type: "体检报告",
     fields: [
       "体检目的",

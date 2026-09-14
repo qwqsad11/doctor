@@ -37,7 +37,7 @@ const SocialPage: React.FC = () => {
       setList(data.list);
       setTotal(data.total);
     } catch (e: any) {
-      message.error(e.response?.data?.message || '加载帖子失败');
+      message.error(e.response?.data?.message || 'Failed to load posts');
     } finally {
       setLoading(false);
     }
@@ -51,13 +51,13 @@ const SocialPage: React.FC = () => {
     const values = await form.validateFields();
     try {
       await socialApi.create(values);
-      message.success('病例已发布（请确保已脱敏）');
+      message.success('Case published. Ensure it is de-identified.');
       setOpen(false);
       form.resetFields();
       setPage(1);
       load(1, pageSize);
     } catch (e: any) {
-      message.error(e.response?.data?.message || '发布失败');
+      message.error(e.response?.data?.message || 'Publish failed');
     }
   };
 
@@ -66,17 +66,17 @@ const SocialPage: React.FC = () => {
       await socialApi.like(id);
       load(page, pageSize);
     } catch (e: any) {
-      message.error(e.response?.data?.message || '点赞失败');
+      message.error(e.response?.data?.message || 'Could not add like');
     }
   };
 
   const handleDelete = async (id: string) => {
     try {
       await socialApi.remove(id);
-      message.success('帖子已删除');
+      message.success('Post deleted');
       load(page, pageSize);
     } catch (e: any) {
-      message.error(e.response?.data?.message || '删除失败');
+      message.error(e.response?.data?.message || 'Delete failed');
     }
   };
 
@@ -86,15 +86,15 @@ const SocialPage: React.FC = () => {
         type="info"
         showIcon
         style={{ marginBottom: 16 }}
-        message="医疗数据与社交严格隔离"
-        description="病例分享必须由医生人工脱敏后才能发布，患者原始病历不会自动同步到社区。"
+        message="Medical data and social features are strictly separated"
+        description="Doctors must de-identify case shares before publishing. Original patient records are never automatically synced to the community."
       />
 
       <Card
-        title="医生同行协作"
+        title="Doctor Collaboration"
         extra={
           <Button type="primary" onClick={() => { form.resetFields(); setOpen(true); }}>
-            发布病例
+            Publish case
           </Button>
         }
       >
@@ -106,7 +106,7 @@ const SocialPage: React.FC = () => {
             current: page,
             pageSize,
             total,
-            showTotal: (t) => `共 ${t} 条`,
+            showTotal: (t) => `${t} total`,
             onChange: (p, ps) => {
               setPage(p);
               setPageSize(ps);
@@ -120,8 +120,8 @@ const SocialPage: React.FC = () => {
                   <LikeOutlined /> {item.likes}
                 </Button>,
                 <Space key="comment"><CommentOutlined /> {item.comments}</Space>,
-                <Popconfirm key="del" title="确认删除？" onConfirm={() => handleDelete(item.id)}>
-                  <Button type="text" size="small" danger>删除</Button>
+                <Popconfirm key="del" title="Delete this post?" onConfirm={() => handleDelete(item.id)}>
+                  <Button type="text" size="small" danger>Delete</Button>
                 </Popconfirm>,
               ]}
             >
@@ -139,23 +139,23 @@ const SocialPage: React.FC = () => {
       </Card>
 
       <Modal
-        title="发布病例分享"
+        title="Publish Case Share"
         open={open}
         onOk={handleSubmit}
         onCancel={() => setOpen(false)}
-        okText="发布"
-        cancelText="取消"
+        okText="Publish"
+        cancelText="Cancel"
         destroyOnClose
       >
         <Form form={form} layout="vertical">
-          <Form.Item name="title" label="标题" rules={[{ required: true, message: '请输入标题' }]}>
-            <Input placeholder="病例主题" />
+          <Form.Item name="title" label="Title" rules={[{ required: true, message: 'Enter a title' }]}>
+            <Input placeholder="Case topic" />
           </Form.Item>
-          <Form.Item name="circle" label="科室 / 圈子">
-            <Input placeholder="如：心血管内科" />
+          <Form.Item name="circle" label="Department / Circle">
+            <Input placeholder="Example: Cardiology" />
           </Form.Item>
-          <Form.Item name="content" label="内容" rules={[{ required: true, message: '请输入内容' }]}>
-            <Input.TextArea rows={4} placeholder="请确保已脱敏，勿包含患者可识别信息……" />
+          <Form.Item name="content" label="Content" rules={[{ required: true, message: 'Enter content' }]}>
+            <Input.TextArea rows={4} placeholder="Ensure the case is de-identified and contains no patient-identifying information." />
           </Form.Item>
         </Form>
       </Modal>

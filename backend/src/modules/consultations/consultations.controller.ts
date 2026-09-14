@@ -18,14 +18,14 @@ import {
   CurrentUserPayload,
 } from '../../common/decorators/current-user.decorator';
 
-@ApiTags('在线问诊')
+@ApiTags("Consultations")
 @ApiBearerAuth()
 @Controller('api/v1/consultations')
 export class ConsultationsController {
   constructor(private readonly consultationsService: ConsultationsService) {}
 
   @Post()
-  @ApiOperation({ summary: '新建问诊' })
+  @ApiOperation({ summary: "Create consultation" })
   create(
     @Body() dto: CreateConsultationDto,
     @CurrentUser() user: CurrentUserPayload,
@@ -34,7 +34,7 @@ export class ConsultationsController {
   }
 
   @Get()
-  @ApiOperation({ summary: '问诊列表（分页 + 搜索）' })
+  @ApiOperation({ summary: "List consultations (pagination and search)" })
   findAll(
     @Query() query: QueryConsultationDto,
     @CurrentUser() user: CurrentUserPayload,
@@ -43,13 +43,13 @@ export class ConsultationsController {
   }
 
   @Get(':id')
-  @ApiOperation({ summary: '问诊详情' })
+  @ApiOperation({ summary: "Consultation details" })
   findOne(@Param('id') id: string, @CurrentUser() user: CurrentUserPayload) {
     return this.consultationsService.findOne(id, user);
   }
 
   @Patch(':id')
-  @ApiOperation({ summary: '更新问诊（接诊/完成等状态流转）' })
+  @ApiOperation({ summary: "Update consultation (accept, complete, or change status)" })
   update(
     @Param('id') id: string,
     @Body() dto: UpdateConsultationDto,
@@ -59,7 +59,7 @@ export class ConsultationsController {
   }
 
   @Delete(':id')
-  @ApiOperation({ summary: '删除问诊' })
+  @ApiOperation({ summary: "Delete consultation" })
   remove(@Param('id') id: string, @CurrentUser() user: CurrentUserPayload) {
     return this.consultationsService.remove(id, user);
   }

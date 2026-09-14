@@ -10,17 +10,17 @@ import {
 
 export class RegisterDto {
   @IsString()
-  @IsNotEmpty({ message: '用户名不能为空' })
-  @MinLength(3, { message: '用户名至少 3 个字符' })
+  @IsNotEmpty({ message: "Username cannot be empty" })
+  @MinLength(3, { message: "Username must be at least 3 characters" })
   @MaxLength(50)
-  @Matches(/^[a-zA-Z0-9_]+$/, { message: '用户名只能包含字母、数字、下划线' })
+  @Matches(/^[a-zA-Z0-9_]+$/, { message: "Username may contain only letters, numbers, and underscores" })
   username: string;
 
-  @IsEmail({}, { message: '邮箱格式不正确' })
+  @IsEmail({}, { message: "Enter a valid email address" })
   email: string;
 
   @IsString()
-  @MinLength(6, { message: '密码至少 6 位' })
+  @MinLength(6, { message: "Password must be at least 6 characters" })
   @MaxLength(50)
   password: string;
 

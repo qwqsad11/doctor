@@ -36,7 +36,7 @@ const AVATAR_EXT: Record<string, string> = {
   "image/gif": "gif",
 };
 
-@ApiTags("用户")
+@ApiTags("Users")
 @Controller("api/v1/users")
 export class UsersController {
   constructor(private readonly usersService: UsersService) {}
@@ -55,13 +55,13 @@ export class UsersController {
   }
 
   @Get("me")
-  @ApiOperation({ summary: "获取当前用户档案" })
+  @ApiOperation({ summary: "Get current user profile" })
   getProfile(@CurrentUser() user: CurrentUserPayload) {
     return this.usersService.getProfile(user.userId);
   }
 
   @Patch("me")
-  @ApiOperation({ summary: "更新当前用户档案" })
+  @ApiOperation({ summary: "Update current user profile" })
   updateProfile(
     @CurrentUser() user: CurrentUserPayload,
     @Body() dto: UpdateProfileDto,
@@ -70,7 +70,7 @@ export class UsersController {
   }
 
   @Post("me/password")
-  @ApiOperation({ summary: "修改密码" })
+  @ApiOperation({ summary: "Change password" })
   changePassword(
     @CurrentUser() user: CurrentUserPayload,
     @Body() dto: ChangePasswordDto,
@@ -82,17 +82,17 @@ export class UsersController {
   @UseInterceptors(
     FileInterceptor("file", { limits: { fileSize: 2 * 1024 * 1024 } }),
   )
-  @ApiOperation({ summary: "上传头像（multipart/form-data 字段名 file）" })
+  @ApiOperation({ summary: "Upload avatar (multipart/form-data field: file)" })
   uploadAvatar(
     @CurrentUser() user: CurrentUserPayload,
     @UploadedFile() file: any,
     @Req() req: Request,
   ) {
-    if (!file) throw new BadRequestException("请上传图片文件");
+    if (!file) throw new BadRequestException("Upload an image file");
 
     const ext = AVATAR_EXT[file.mimetype];
     if (!ext)
-      throw new BadRequestException("仅支持 JPG / PNG / WebP / GIF 图片");
+      throw new BadRequestException("Only JPG, PNG, WebP, and GIF images are supported");
 
     const filename = `${user.userId}-${Date.now()}.${ext}`;
     const dir = join(process.cwd(), "uploads", "avatars");
@@ -142,6 +142,6 @@ export class UsersController {
     @CurrentUser() user: CurrentUserPayload,
   ) {
     await this.usersService.revokeTempPermission(id, user);
-    return { message: "临时权限已撤销" };
+    return { message: "Temporary permission revoked" };
   }
 }

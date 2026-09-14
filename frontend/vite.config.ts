@@ -11,6 +11,7 @@ export default defineConfig(async () => {
       port: 3000,
       open: true,
       proxy: {
+        '/uploads': { target: 'http://localhost:3001', changeOrigin: true },
         '/api': {
           target: 'http://localhost:3001',
           changeOrigin: true,

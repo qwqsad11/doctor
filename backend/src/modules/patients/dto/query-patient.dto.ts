@@ -3,17 +3,17 @@ import { IsOptional, IsString } from 'class-validator';
 import { PaginationQueryDto } from '../../../common/dto/pagination-query.dto';
 
 export class QueryPatientDto extends PaginationQueryDto {
-  @ApiPropertyOptional({ description: '搜索关键词（姓名/编号/症状/分组）' })
+  @ApiPropertyOptional({ description: "Search keyword (name, ID, symptoms, or group)" })
   @IsOptional()
   @IsString()
   keyword?: string;
 
-  @ApiPropertyOptional({ description: '状态', enum: ['在管', '待随访', '已转出'] })
+  @ApiPropertyOptional({ description: "Status", enum: ['在管', '待随访', '已转出'] })
   @IsOptional()
   @IsString()
   status?: string;
 
-  @ApiPropertyOptional({ description: '病种分组' })
+  @ApiPropertyOptional({ description: "Condition group" })
   @IsOptional()
   @IsString()
   group?: string;

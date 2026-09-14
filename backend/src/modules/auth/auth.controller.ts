@@ -5,7 +5,7 @@ import { LoginDto } from './dto/login.dto';
 import { RegisterDto } from './dto/register.dto';
 import { Public } from '../../common/decorators/public.decorator';
 
-@ApiTags('认证')
+@ApiTags("Authentication")
 @Controller('api/v1/auth')
 export class AuthController {
   constructor(private readonly authService: AuthService) {}
@@ -17,10 +17,10 @@ export class AuthController {
   @Public()
   @Post('login')
   @HttpCode(HttpStatus.OK)
-  @ApiOperation({ summary: '用户登录' })
+  @ApiOperation({ summary: "User sign-in" })
   @ApiResponse({
     status: 200,
-    description: '登录成功，返回JWT Token',
+    description: "Sign-in successful; returns a JWT token",
   })
   async login(@Body() loginDto: LoginDto) {
     return this.authService.login(loginDto);
@@ -32,10 +32,10 @@ export class AuthController {
   @Public()
   @Post('register')
   @HttpCode(HttpStatus.CREATED)
-  @ApiOperation({ summary: '用户注册' })
+  @ApiOperation({ summary: "User registration" })
   @ApiResponse({
     status: 201,
-    description: '注册成功',
+    description: "Registration successful",
   })
   async register(@Body() registerDto: RegisterDto) {
     return this.authService.register(registerDto);
@@ -47,7 +47,7 @@ export class AuthController {
   @Public()
   @Post('refresh')
   @HttpCode(HttpStatus.OK)
-  @ApiOperation({ summary: '刷新Token' })
+  @ApiOperation({ summary: "Refresh token" })
   async refreshToken() {
     // TODO: 实现刷新Token逻辑
     return {

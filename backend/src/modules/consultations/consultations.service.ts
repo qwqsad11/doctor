@@ -34,7 +34,7 @@ export class ConsultationsService {
     const patient = await this.patientRepository.findOne({
       where: { id: dto.patient_id },
     });
-    if (!patient) throw new BadRequestException('患者不存在');
+    if (!patient) throw new BadRequestException("Patient not found");
 
     const consultation = this.consultationsRepository.create({
       ...dto,
@@ -45,7 +45,7 @@ export class ConsultationsService {
       status: '待接诊' as const,
     });
     const saved = await this.consultationsRepository.save(consultation);
-    await this.auditService.record(user, '新建问诊', saved.consultation_no, '成功');
+    await this.auditService.record(user, "Create consultation", saved.consultation_no, '成功');
     return saved;
   }
 
@@ -82,9 +82,9 @@ export class ConsultationsService {
     const consultation = await this.consultationsRepository.findOne({
       where: { id },
     });
-    if (!consultation) throw new NotFoundException('问诊记录不存在');
+    if (!consultation) throw new NotFoundException("Consultation not found");
     if (user && !this.isAdmin(user) && consultation.doctor_id !== user.userId && !(await this.usersService.canViewConsultation(user.userId, id))) {
-      throw new ForbiddenException('无权访问该问诊');
+      throw new ForbiddenException("You do not have access to this consultation");
     }
     return consultation;
   }
@@ -100,15 +100,15 @@ export class ConsultationsService {
     Object.assign(consultation, dto);
     const saved = await this.consultationsRepository.save(consultation);
     if (dto.status === '已完成') await this.usersService.revokeConsultationPermissions(id, user);
-    await this.auditService.record(user, '更新问诊', saved.consultation_no, '成功');
+    await this.auditService.record(user, "Update consultation", saved.consultation_no, '成功');
     return saved;
   }
 
   async remove(id: string, user: CurrentUserPayload) {
     const consultation = await this.findOne(id, user);
     await this.consultationsRepository.remove(consultation);
-    await this.auditService.record(user, '删除问诊', consultation.consultation_no, '成功');
-    return { message: '删除成功' };
+    await this.auditService.record(user, "Delete consultation", consultation.consultation_no, '成功');
+    return { message: "Deleted successfully" };
   }
 
   private async generateNo(): Promise<string> {

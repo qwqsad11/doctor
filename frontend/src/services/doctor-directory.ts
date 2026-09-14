@@ -32,10 +32,10 @@ export interface JointConference extends Conference {
   }[];
 }
 export const roleLabels: Record<string, string> = {
-  admin: "管理员",
-  doctor: "普通医生",
-  senior_doctor: "上级医生",
-  consultation_expert: "会诊专家",
+  admin: "Administrator",
+  doctor: "Doctor",
+  senior_doctor: "Senior Doctor",
+  consultation_expert: "Consultation Expert",
 };
 export function doctorRole(roles: string[]) {
   return (
@@ -46,7 +46,7 @@ export function doctorRole(roles: string[]) {
           !(r === "doctor" && roles.includes("senior_doctor")),
       )
       .map((r) => roleLabels[r])
-      .join(" / ") || "未分配角色"
+      .join(" / ") || "No role assigned"
   );
 }
 export const directoryApi = {

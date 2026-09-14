@@ -5,5 +5,5 @@ export const formatDateTime = (value?: string | null): string => {
   if (!value) return '-';
   const d = new Date(value);
   if (Number.isNaN(d.getTime())) return value;
-  return d.toLocaleString('zh-CN', { hour12: false });
+  return d.toLocaleString('en-US', { hour12: false });
 };

@@ -46,6 +46,10 @@ async function api(
     method + " " + route + ": " + JSON.stringify(data),
   );
   assertions++;
+  if (expected >= 400) {
+    assert.doesNotMatch(JSON.stringify(data.message), /\p{Script=Han}/u, "API errors must use English");
+    assertions++;
+  }
   return data;
 }
 async function startServer() {

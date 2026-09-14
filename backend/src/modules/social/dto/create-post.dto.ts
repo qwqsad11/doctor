@@ -2,16 +2,16 @@ import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { IsOptional, IsString, Length } from 'class-validator';
 
 export class CreatePostDto {
-  @ApiProperty({ description: '标题' })
+  @ApiProperty({ description: "Title" })
   @IsString()
   @Length(1, 200)
   title: string;
 
-  @ApiProperty({ description: '内容（须已脱敏）' })
+  @ApiProperty({ description: "Content (must be de-identified)" })
   @IsString()
   content: string;
 
-  @ApiPropertyOptional({ description: '科室/圈子' })
+  @ApiPropertyOptional({ description: "Department / Community" })
   @IsOptional()
   @IsString()
   circle?: string;

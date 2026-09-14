@@ -3,17 +3,17 @@ import { IsOptional, IsString } from 'class-validator';
 import { PaginationQueryDto } from '../../../common/dto/pagination-query.dto';
 
 export class QueryAuditDto extends PaginationQueryDto {
-  @ApiPropertyOptional({ description: '关键词（操作人/对象/类型）' })
+  @ApiPropertyOptional({ description: "Keyword (actor, target, or action)" })
   @IsOptional()
   @IsString()
   keyword?: string;
 
-  @ApiPropertyOptional({ description: '操作类型' })
+  @ApiPropertyOptional({ description: "Action type" })
   @IsOptional()
   @IsString()
   action?: string;
 
-  @ApiPropertyOptional({ description: '操作人' })
+  @ApiPropertyOptional({ description: "Actor" })
   @IsOptional()
   @IsString()
   operator?: string;

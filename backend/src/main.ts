@@ -1,10 +1,11 @@
 import { NestFactory } from '@nestjs/core';
 import { NestExpressApplication } from '@nestjs/platform-express';
-import { ValidationPipe } from '@nestjs/common';
+import { BadRequestException, ValidationPipe } from '@nestjs/common';
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
 import helmet from 'helmet';
 import { join } from 'path';
 import { AppModule } from './app.module';
+import { englishValidationMessages } from './common/utils/validation-messages';
 
 async function bootstrap() {
   const app = await NestFactory.create<NestExpressApplication>(AppModule);
@@ -24,6 +25,7 @@ async function bootstrap() {
   // 全局管道
   app.useGlobalPipes(
     new ValidationPipe({
+      exceptionFactory: (errors) => new BadRequestException(errors.flatMap(englishValidationMessages)),
       whitelist: true,
       forbidNonWhitelisted: true,
       transform: true,
@@ -33,8 +35,8 @@ async function bootstrap() {
   // Swagger 文档
   if (process.env.NODE_ENV !== 'production') {
     const config = new DocumentBuilder()
-      .setTitle('医生服务系统 API')
-      .setDescription('智慧医养大数据公共服务平台 - 医生服务系统 API 文档')
+      .setTitle("Doctor Services API")
+      .setDescription("Smart Healthcare and Elderly Care Platform - Doctor Services API documentation")
       .setVersion('0.1.0')
       .addBearerAuth()
       .build();
@@ -44,9 +46,9 @@ async function bootstrap() {
 
   const PORT = process.env.PORT || 3001;
   await app.listen(PORT);
-  console.log(`🚀 医生服务系统后端运行在: http://localhost:${PORT}`);
+  console.log(`Doctor Services backend running at: http://localhost:${PORT}`);
   if (process.env.NODE_ENV !== 'production') {
-    console.log(`📚 API 文档: http://localhost:${PORT}/api/docs`);
+    console.log(`API documentation: http://localhost:${PORT}/api/docs`);
   }
 }
 

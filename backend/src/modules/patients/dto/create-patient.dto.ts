@@ -10,33 +10,33 @@ import {
 } from 'class-validator';
 
 export class CreatePatientDto {
-  @ApiProperty({ description: '姓名' })
+  @ApiProperty({ description: "Name" })
   @IsString()
   @Length(1, 50)
   name: string;
 
-  @ApiProperty({ description: '性别', enum: ['男', '女'] })
+  @ApiProperty({ description: "Gender", enum: ['男', '女'] })
   @IsEnum(['男', '女'])
   gender: '男' | '女';
 
-  @ApiProperty({ description: '年龄' })
+  @ApiProperty({ description: "Age" })
   @IsInt()
   @Min(0)
   @Max(150)
   age: number;
 
-  @ApiPropertyOptional({ description: '电话' })
+  @ApiPropertyOptional({ description: "Phone" })
   @IsOptional()
   @IsString()
   @Length(1, 20)
   phone?: string;
 
-  @ApiPropertyOptional({ description: '病种分组' })
+  @ApiPropertyOptional({ description: "Condition group" })
   @IsOptional()
   @IsString()
   group?: string;
 
-  @ApiPropertyOptional({ description: '主要症状' })
+  @ApiPropertyOptional({ description: "Main symptoms" })
   @IsOptional()
   @IsString()
   symptom?: string;
