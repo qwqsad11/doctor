@@ -10,6 +10,17 @@ body {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   background-color: #f5f5f5;
+  /* 全局禁止文本选中，点击文字不再出现光标/选中高亮 */
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+/* 仅输入框/文本域保留光标与文本选择能力 */
+input,
+textarea,
+[contenteditable='true'] {
+  user-select: text;
+  -webkit-user-select: text;
 }
 
 #root {
