@@ -1,6 +1,6 @@
 /**
- * 演示数据播种脚本（幂等，通过后端 API 写入，走真实业务逻辑 + 审计）
- * 用法：先启动后端，再 `node scripts/seed-demo-data.js [PORT]`
+ * Demo data seed script (idempotent; writes through the backend API, using real business logic + audit).
+ * Usage: start the backend first, then `node scripts/seed-demo-data.js [PORT]`
  */
 const PORT = process.argv[2] || '3001';
 const BASE = `http://localhost:${PORT}/api/v1`;
@@ -27,26 +27,26 @@ async function main() {
     body: { username: 'admin', password: 'admin123', factor: 'email', verification_code: '123456' },
   });
 
-  // 1) 清理冒烟测试残留的「测试患者」
-  const leftovers = await api('/patients?keyword=测试患者&pageSize=100', { token: t });
+  // 1) Clean up leftover "Test Patient" records from smoke tests
+  const leftovers = await api('/patients?keyword=Test Patient&pageSize=100', { token: t });
   for (const p of leftovers.list) {
     await api(`/patients/${p.id}`, { method: 'DELETE', token: t });
   }
 
-  // 2) 幂等：已存在演示数据则跳过
-  const existing = await api('/patients?keyword=张伟', { token: t });
+  // 2) Idempotent: skip if demo data already exists
+  const existing = await api('/patients?keyword=David Zhang', { token: t });
   if (existing.total > 0) {
-    console.log('演示数据已存在，跳过播种');
+    console.log('Demo data already exists, skipping seed');
     return;
   }
 
-  // 3) 患者
+  // 3) Patients
   const patientsDef = [
-    { name: '张伟', gender: '男', age: 58, phone: '13800002211', group: '高血压', symptom: '头晕', status: '在管' },
-    { name: '王芳', gender: '女', age: 46, phone: '13900008820', group: '糖尿病', symptom: '乏力', status: '在管' },
-    { name: '刘强', gender: '男', age: 63, phone: '13700006645', group: '冠心病', symptom: '胸闷', status: '待随访' },
-    { name: '陈静', gender: '女', age: 39, phone: '13600001102', group: '慢阻肺', symptom: '咳嗽', status: '在管' },
-    { name: '赵磊', gender: '男', age: 71, phone: '13500009901', group: '高血压', symptom: '心悸', status: '已转出' },
+    { name: 'David Zhang', gender: '男', age: 58, phone: '13800002211', group: 'Hypertension', symptom: 'Dizziness', status: '在管' },
+    { name: 'Mary Wang', gender: '女', age: 46, phone: '13900008820', group: 'Diabetes', symptom: 'Fatigue', status: '在管' },
+    { name: 'Michael Liu', gender: '男', age: 63, phone: '13700006645', group: 'Coronary Heart Disease', symptom: 'Chest tightness', status: '待随访' },
+    { name: 'Jennifer Chen', gender: '女', age: 39, phone: '13600001102', group: 'COPD', symptom: 'Cough', status: '在管' },
+    { name: 'Robert Zhao', gender: '男', age: 71, phone: '13500009901', group: 'Hypertension', symptom: 'Palpitations', status: '已转出' },
   ];
   const pid = {};
   for (const p of patientsDef) {
@@ -56,15 +56,15 @@ async function main() {
     if (status !== '在管') {
       await api(`/patients/${created.id}`, { method: 'PATCH', token: t, body: { status } });
     }
-    console.log('✓ 患者', created.patient_no, p.name);
+    console.log('✓ Patient', created.patient_no, p.name);
   }
 
-  // 4) 电子病历
+  // 4) Electronic medical records
   const emrDef = [
-    { name: '张伟', type: '门诊病历', diagnosis: '高血压 2 级', status: '待审核' },
-    { name: '王芳', type: '住院病历', diagnosis: '2 型糖尿病', status: '已归档' },
-    { name: '刘强', type: '门诊病历', diagnosis: '冠心病', status: '草稿' },
-    { name: '陈静', type: '体检报告', diagnosis: '慢阻肺', status: '已退回' },
+    { name: 'David Zhang', type: '门诊病历', diagnosis: 'Hypertension, Grade 2', status: '待审核' },
+    { name: 'Mary Wang', type: '住院病历', diagnosis: 'Type 2 Diabetes', status: '已归档' },
+    { name: 'Michael Liu', type: '门诊病历', diagnosis: 'Coronary Heart Disease', status: '草稿' },
+    { name: 'Jennifer Chen', type: '体检报告', diagnosis: 'COPD', status: '已退回' },
   ];
   for (const e of emrDef) {
     const created = await api('/emr', {
@@ -73,15 +73,15 @@ async function main() {
       body: { patient_id: pid[e.name], type: e.type, diagnosis: e.diagnosis },
     });
     // Seed drafts only; audited states must use the real assigned-reviewer workflow.
-    console.log('✓ 病历', created.emr_no, e.name, created.status);
+    console.log('✓ Record', created.emr_no, e.name, created.status);
   }
 
-  // 5) 在线问诊
+  // 5) Online consultations
   const conDef = [
-    { name: '张伟', type: '图文', symptom: '反复头晕', status: '进行中' },
-    { name: '王芳', type: '视频', symptom: '乏力', status: '待接诊' },
-    { name: '刘强', type: '图文', symptom: '胸闷', status: '已完成' },
-    { name: '陈静', type: '视频', symptom: '咳嗽', status: '已完成' },
+    { name: 'David Zhang', type: '图文', symptom: 'Recurrent dizziness', status: '进行中' },
+    { name: 'Mary Wang', type: '视频', symptom: 'Fatigue', status: '待接诊' },
+    { name: 'Michael Liu', type: '图文', symptom: 'Chest tightness', status: '已完成' },
+    { name: 'Jennifer Chen', type: '视频', symptom: 'Cough', status: '已完成' },
   ];
   for (const c of conDef) {
     const created = await api('/consultations', {
@@ -90,14 +90,14 @@ async function main() {
       body: { patient_id: pid[c.name], type: c.type, symptom: c.symptom },
     });
     await api(`/consultations/${created.id}`, { method: 'PATCH', token: t, body: { status: c.status } });
-    console.log('✓ 问诊', created.consultation_no, c.name, c.status);
+    console.log('✓ Consultation', created.consultation_no, c.name, c.status);
   }
 
-  // 6) 远程会诊
+  // 6) Remote conferences
   const confDef = [
-    { topic: '张伟高血压疑难病例会诊', name: '张伟', experts: ['王主任', '赵教授'], status: '进行中' },
-    { topic: '刘强冠心病方案讨论', name: '刘强', experts: ['李主任'], status: '待会诊' },
-    { topic: '陈静慢阻肺复诊评估', name: '陈静', experts: ['张主任', '刘教授'], status: '已完成' },
+    { topic: 'David Zhang - Difficult Hypertension Case', name: 'David Zhang', experts: ['Dr. Wang', 'Dr. Zhao'], status: '进行中' },
+    { topic: 'Michael Liu - CHD Treatment Plan Discussion', name: 'Michael Liu', experts: ['Dr. Li'], status: '待会诊' },
+    { topic: 'Jennifer Chen - COPD Follow-up Assessment', name: 'Jennifer Chen', experts: ['Dr. Zhang', 'Dr. Liu'], status: '已完成' },
   ];
   for (const c of confDef) {
     const created = await api('/conferences', {
@@ -106,16 +106,16 @@ async function main() {
       body: { topic: c.topic, patient_id: pid[c.name], experts: c.experts },
     });
     if (c.status !== '待会诊') await api(`/conferences/${created.id}`, { method: 'PATCH', token: t, body: { status: '进行中' } });
-    if (c.status === '已完成') await api(`/conferences/${created.id}`, { method: 'PATCH', token: t, body: { status: '已完成', summary: '历史演示会诊总结' } });
-    console.log('✓ 会诊', created.conference_no, c.topic);
+    if (c.status === '已完成') await api(`/conferences/${created.id}`, { method: 'PATCH', token: t, body: { status: '已完成', summary: 'Historical demo conference summary' } });
+    console.log('✓ Conference', created.conference_no, c.topic);
   }
 
-  // 7) 健康管理
+  // 7) Health management
   const healthDef = [
-    { name: '张伟', plan: '高血压控制计划', metrics: '血压 145/92', alert_level: '预警' },
-    { name: '王芳', plan: '糖尿病饮食管理', metrics: '血糖 6.8 mmol/L', alert_level: '正常' },
-    { name: '刘强', plan: '冠心病康复计划', metrics: '心率 88 bpm', alert_level: '异常' },
-    { name: '陈静', plan: '慢阻肺呼吸训练', metrics: '血氧 95%', alert_level: '正常' },
+    { name: 'David Zhang', plan: 'Hypertension Control Plan', metrics: 'Blood pressure 145/92', alert_level: '预警' },
+    { name: 'Mary Wang', plan: 'Diabetes Dietary Management', metrics: 'Blood glucose 6.8 mmol/L', alert_level: '正常' },
+    { name: 'Michael Liu', plan: 'CHD Rehabilitation Plan', metrics: 'Heart rate 88 bpm', alert_level: '异常' },
+    { name: 'Jennifer Chen', plan: 'COPD Breathing Training', metrics: 'SpO2 95%', alert_level: '正常' },
   ];
   for (const h of healthDef) {
     const created = await api('/health', {
@@ -123,24 +123,24 @@ async function main() {
       token: t,
       body: { patient_id: pid[h.name], plan: h.plan, metrics: h.metrics, alert_level: h.alert_level },
     });
-    console.log('✓ 健康计划', h.name, h.alert_level);
+    console.log('✓ Health plan', h.name, h.alert_level);
   }
 
-  // 8) 医生社交
+  // 8) Doctor community
   const postDef = [
-    { circle: '心血管内科', title: '一例难治性高血压的诊疗思路', content: '分享一例经过脱敏处理的难治性高血压病例，探讨联合用药方案……' },
-    { circle: '呼吸内科', title: '慢阻肺急性加重期的处理要点', content: '结合最新指南，整理慢阻肺急性加重期的评估与处理流程……' },
-    { circle: '内分泌科', title: '糖尿病足早期识别经验分享', content: '门诊中如何快速识别糖尿病足高危患者（已脱敏）……' },
+    { circle: 'Cardiology', title: 'Managing a case of refractory hypertension', content: 'Sharing a de-identified case of refractory hypertension and discussing combination therapy options…' },
+    { circle: 'Respiratory Medicine', title: 'Key points for COPD acute exacerbation', content: 'A summary of the assessment and management of COPD acute exacerbation based on the latest guidelines…' },
+    { circle: 'Endocrinology', title: 'Early recognition of diabetic foot', content: 'How to quickly identify high-risk diabetic foot patients in the clinic (de-identified)…' },
   ];
   for (const s of postDef) {
     await api('/social/posts', { method: 'POST', token: t, body: s });
-    console.log('✓ 帖子', s.title);
+    console.log('✓ Post', s.title);
   }
 
-  console.log('\n播种完成 ✅');
+  console.log('\nSeed complete ✅');
 }
 
 main().catch((e) => {
-  console.error('播种失败:', e.message);
+  console.error('Seed failed:', e.message);
   process.exit(1);
 });
