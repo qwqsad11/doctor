@@ -84,6 +84,9 @@ export interface Consultation {
   advice: string | null;
   attachments?: string | null;
   video_recording?: string | null;
+  likes: number;
+  comments: number;
+  liked?: boolean;
   started_at: string | null;
   ended_at: string | null;
   created_at: string;
@@ -129,6 +132,18 @@ export interface SocialPost {
   content: string;
   likes: number;
   comments: number;
+  liked?: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface Comment {
+  id: string;
+  target_type: string;
+  target_id: string;
+  author_id: string | null;
+  author_name: string;
+  content: string;
   created_at: string;
   updated_at: string;
 }

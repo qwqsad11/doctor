@@ -5,7 +5,7 @@
   "author": "医疗团队",
   "license": "MIT",
   "engines": {
-    "node": "\u003e=18"
+    "node": ">=18"
   },
   "scripts": {
     "start": "nest start",
@@ -23,9 +23,10 @@
     "db:migrate": "typeorm migration:run",
     "db:rollback": "typeorm migration:revert",
     "db:init": "node scripts/init-db.js",
-    "db:seed": "node scripts/seed-admin.js \u0026\u0026 node scripts/seed-demo-data.js",
+    "db:seed": "node scripts/seed-admin.js && node scripts/seed-demo-data.js && node scripts/seed-interactions.js",
     "test:workflows": "node scripts/test-workflows.js",
-    "seed:acceptance": "node scripts/seed-acceptance.js"
+    "seed:acceptance": "node scripts/seed-acceptance.js",
+    "seed:interactions": "node scripts/seed-interactions.js"
   },
   "dependencies": {
     "@nestjs/common": "^10.2.0",

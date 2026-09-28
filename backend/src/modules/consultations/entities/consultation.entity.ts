@@ -49,6 +49,12 @@ export class Consultation {
   @Column('text', { nullable: true })
   video_recording: string;
 
+  @Column('int', { default: 0 })
+  likes: number;
+
+  @Column('int', { default: 0 })
+  comments: number;
+
   @Column({ nullable: true })
   started_at: Date;
 

@@ -7,6 +7,7 @@ import type {
   Conference,
   HealthRecord,
   SocialPost,
+  Comment,
   AuditLog,
   TempPermission,
   UserProfile,
@@ -45,6 +46,14 @@ export const consultationsApi = {
   update: (id: string, data: Partial<Consultation>) =>
     api.patch<Consultation>(`/consultations/${id}`, data).then((r) => r.data),
   remove: (id: string) => api.delete(`/consultations/${id}`).then((r) => r.data),
+  like: (id: string) =>
+    api.post<{ likes: number; liked: boolean }>(`/consultations/${id}/like`).then((r) => r.data),
+  listComments: (id: string) =>
+    api.get<{ list: Comment[]; total: number }>(`/consultations/${id}/comments`).then((r) => r.data),
+  addComment: (id: string, content: string) =>
+    api.post<Comment>(`/consultations/${id}/comments`, { content }).then((r) => r.data),
+  removeComment: (id: string, commentId: string) =>
+    api.delete(`/consultations/${id}/comments/${commentId}`).then((r) => r.data),
 };
 
 export const conferencesApi = {
@@ -74,10 +83,18 @@ export const healthApi = {
 export const socialApi = {
   list: (params?: Record<string, unknown>) =>
     api.get<Paginated<SocialPost>>('/social/posts', { params }).then((r) => r.data),
+  detail: (id: string) =>
+    api.get<SocialPost>(`/social/posts/${id}`).then((r) => r.data),
   create: (data: Partial<SocialPost>) =>
     api.post<SocialPost>('/social/posts', data).then((r) => r.data),
   like: (id: string) =>
-    api.post<SocialPost>(`/social/posts/${id}/like`).then((r) => r.data),
+    api.post<{ likes: number; liked: boolean }>(`/social/posts/${id}/like`).then((r) => r.data),
+  listComments: (id: string) =>
+    api.get<{ list: Comment[]; total: number }>(`/social/posts/${id}/comments`).then((r) => r.data),
+  addComment: (id: string, content: string) =>
+    api.post<Comment>(`/social/posts/${id}/comments`, { content }).then((r) => r.data),
+  removeComment: (id: string, commentId: string) =>
+    api.delete(`/social/posts/${id}/comments/${commentId}`).then((r) => r.data),
   remove: (id: string) => api.delete(`/social/posts/${id}`).then((r) => r.data),
 };
 

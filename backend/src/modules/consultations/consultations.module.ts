@@ -5,9 +5,10 @@ import { Patient } from '../patients/entities/patient.entity';
 import { ConsultationsService } from './consultations.service';
 import { ConsultationsController } from './consultations.controller';
 import { UsersModule } from '../users/users.module';
+import { InteractionsModule } from '../interactions/interactions.module';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([Consultation, Patient]), UsersModule],
+  imports: [TypeOrmModule.forFeature([Consultation, Patient]), UsersModule, InteractionsModule],
   controllers: [ConsultationsController],
   providers: [ConsultationsService],
   exports: [ConsultationsService],

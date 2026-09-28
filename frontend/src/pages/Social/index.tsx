@@ -12,12 +12,15 @@ import {
   Form,
   Input,
   Popconfirm,
+  Drawer,
+  Divider,
   message,
 } from 'antd';
-import { LikeOutlined, CommentOutlined } from '@ant-design/icons';
+import { LikeOutlined, LikeFilled, CommentOutlined, EyeOutlined } from '@ant-design/icons';
 import { socialApi } from '@/services/business';
-import type { SocialPost } from '@/services/types';
+import type { SocialPost, Comment } from '@/services/types';
 import { formatDateTime } from '@/utils/format';
+import CommentSection from '@/components/CommentSection';
 
 const { Paragraph } = Typography;
 
@@ -29,6 +32,10 @@ const SocialPage: React.FC = () => {
   const [pageSize, setPageSize] = useState(10);
   const [open, setOpen] = useState(false);
   const [form] = Form.useForm();
+
+  const [detail, setDetail] = useState<SocialPost | null>(null);
+  const [comments, setComments] = useState<Comment[]>([]);
+  const [commentsLoading, setCommentsLoading] = useState(false);
 
   const load = useCallback(async (p: number, ps: number) => {
     setLoading(true);
@@ -47,6 +54,30 @@ const SocialPage: React.FC = () => {
     load(page, pageSize);
   }, [page, pageSize, load]);
 
+  const loadComments = useCallback(async (id: string) => {
+    setCommentsLoading(true);
+    try {
+      const data = await socialApi.listComments(id);
+      setComments(data.list);
+    } catch (e: any) {
+      message.error(e.response?.data?.message || 'Failed to load comments');
+    } finally {
+      setCommentsLoading(false);
+    }
+  }, []);
+
+  const openDetail = async (post: SocialPost) => {
+    setDetail(post);
+    setComments([]);
+    try {
+      const [d, c] = await Promise.all([socialApi.detail(post.id), socialApi.listComments(post.id)]);
+      setDetail(d);
+      setComments(c.list);
+    } catch (e: any) {
+      message.error(e.response?.data?.message || 'Failed to load post');
+    }
+  };
+
   const handleSubmit = async () => {
     const values = await form.validateFields();
     try {
@@ -63,10 +94,37 @@ const SocialPage: React.FC = () => {
 
   const handleLike = async (id: string) => {
     try {
-      await socialApi.like(id);
+      const r = await socialApi.like(id);
+      if (detail?.id === id) {
+        setDetail({ ...detail, likes: r.likes, liked: r.liked });
+      }
       load(page, pageSize);
     } catch (e: any) {
-      message.error(e.response?.data?.message || 'Could not add like');
+      message.error(e.response?.data?.message || 'Could not update like');
+    }
+  };
+
+  const submitComment = async (content: string) => {
+    if (!detail) return;
+    try {
+      await socialApi.addComment(detail.id, content);
+      message.success('Comment added');
+      await loadComments(detail.id);
+      load(page, pageSize);
+    } catch (e: any) {
+      message.error(e.response?.data?.message || 'Failed to add comment');
+    }
+  };
+
+  const deleteComment = async (commentId: string) => {
+    if (!detail) return;
+    try {
+      await socialApi.removeComment(detail.id, commentId);
+      message.success('Comment deleted');
+      await loadComments(detail.id);
+      load(page, pageSize);
+    } catch (e: any) {
+      message.error(e.response?.data?.message || 'Failed to delete comment');
     }
   };
 
@@ -91,7 +149,7 @@ const SocialPage: React.FC = () => {
       />
 
       <Card
-        title="Doctor Collaboration"
+        title="Doctor Community"
         extra={
           <Button type="primary" onClick={() => { form.resetFields(); setOpen(true); }}>
             Publish case
@@ -119,7 +177,12 @@ const SocialPage: React.FC = () => {
                 <Button key="like" type="text" size="small" onClick={() => handleLike(item.id)}>
                   <LikeOutlined /> {item.likes}
                 </Button>,
-                <Space key="comment"><CommentOutlined /> {item.comments}</Space>,
+                <Button key="comment" type="text" size="small" onClick={() => openDetail(item)}>
+                  <CommentOutlined /> {item.comments}
+                </Button>,
+                <Button key="view" type="text" size="small" onClick={() => openDetail(item)}>
+                  <EyeOutlined /> View
+                </Button>,
                 <Popconfirm key="del" title="Delete this post?" onConfirm={() => handleDelete(item.id)}>
                   <Button type="text" size="small" danger>Delete</Button>
                 </Popconfirm>,
@@ -127,7 +190,11 @@ const SocialPage: React.FC = () => {
             >
               <List.Item.Meta
                 avatar={<Avatar>{item.author_name.slice(0, 1)}</Avatar>}
-                title={<Space>{item.title}{item.circle && <Tag color="blue">{item.circle}</Tag>}</Space>}
+                title={
+                  <a onClick={() => openDetail(item)}>
+                    <Space>{item.title}{item.circle && <Tag color="blue">{item.circle}</Tag>}</Space>
+                  </a>
+                }
                 description={`${item.author_name} · ${formatDateTime(item.created_at)}`}
               />
               <Paragraph type="secondary" style={{ marginBottom: 0 }}>
@@ -159,6 +226,41 @@ const SocialPage: React.FC = () => {
           </Form.Item>
         </Form>
       </Modal>
+
+      <Drawer
+        title={detail?.title || 'Post'}
+        open={!!detail}
+        onClose={() => setDetail(null)}
+        width={520}
+      >
+        {detail && (
+          <>
+            <Space>
+              <Avatar>{detail.author_name.slice(0, 1)}</Avatar>
+              <div>
+                <div>{detail.author_name}</div>
+                <div style={{ color: '#999', fontSize: 12 }}>{formatDateTime(detail.created_at)}</div>
+              </div>
+            </Space>
+            {detail.circle && <Tag color="blue" style={{ marginTop: 12 }}>{detail.circle}</Tag>}
+            <Paragraph style={{ marginTop: 12, whiteSpace: 'pre-wrap' }}>{detail.content}</Paragraph>
+            <Button
+              type={detail.liked ? 'primary' : 'default'}
+              icon={detail.liked ? <LikeFilled /> : <LikeOutlined />}
+              onClick={() => handleLike(detail.id)}
+            >
+              {detail.liked ? 'Liked' : 'Like'} {detail.likes}
+            </Button>
+            <Divider>Comments ({detail.comments})</Divider>
+            <CommentSection
+              comments={comments}
+              loading={commentsLoading}
+              onSubmit={submitComment}
+              onDelete={deleteComment}
+            />
+          </>
+        )}
+      </Drawer>
     </div>
   );
 };

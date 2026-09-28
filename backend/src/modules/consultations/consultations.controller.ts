@@ -13,6 +13,7 @@ import { ConsultationsService } from './consultations.service';
 import { CreateConsultationDto } from './dto/create-consultation.dto';
 import { UpdateConsultationDto } from './dto/update-consultation.dto';
 import { QueryConsultationDto } from './dto/query-consultation.dto';
+import { CreateCommentDto } from '../interactions/dto/create-comment.dto';
 import {
   CurrentUser,
   CurrentUserPayload,
@@ -56,6 +57,38 @@ export class ConsultationsController {
     @CurrentUser() user: CurrentUserPayload,
   ) {
     return this.consultationsService.update(id, dto, user);
+  }
+
+  @Post(':id/like')
+  @ApiOperation({ summary: "Toggle like" })
+  like(@Param('id') id: string, @CurrentUser() user: CurrentUserPayload) {
+    return this.consultationsService.like(id, user);
+  }
+
+  @Get(':id/comments')
+  @ApiOperation({ summary: "List comments" })
+  listComments(@Param('id') id: string, @CurrentUser() user: CurrentUserPayload) {
+    return this.consultationsService.listComments(id, user);
+  }
+
+  @Post(':id/comments')
+  @ApiOperation({ summary: "Add comment" })
+  addComment(
+    @Param('id') id: string,
+    @Body() dto: CreateCommentDto,
+    @CurrentUser() user: CurrentUserPayload,
+  ) {
+    return this.consultationsService.addComment(id, dto.content, user);
+  }
+
+  @Delete(':id/comments/:commentId')
+  @ApiOperation({ summary: "Delete comment" })
+  removeComment(
+    @Param('id') id: string,
+    @Param('commentId') commentId: string,
+    @CurrentUser() user: CurrentUserPayload,
+  ) {
+    return this.consultationsService.removeComment(id, commentId, user);
   }
 
   @Delete(':id')

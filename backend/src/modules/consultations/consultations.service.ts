@@ -14,6 +14,7 @@ import { QueryConsultationDto } from './dto/query-consultation.dto';
 import { CurrentUserPayload } from '../../common/decorators/current-user.decorator';
 import { AuditService } from '../audit/audit.service';
 import { UsersService } from '../users/users.service';
+import { InteractionsService } from '../interactions/interactions.service';
 
 @Injectable()
 export class ConsultationsService {
@@ -24,6 +25,7 @@ export class ConsultationsService {
     private patientRepository: Repository<Patient>,
     private auditService: AuditService,
     private usersService: UsersService,
+    private interactionsService: InteractionsService,
   ) {}
 
   private isAdmin(user: CurrentUserPayload): boolean {
@@ -86,7 +88,45 @@ export class ConsultationsService {
     if (user && !this.isAdmin(user) && consultation.doctor_id !== user.userId && !(await this.usersService.canViewConsultation(user.userId, id))) {
       throw new ForbiddenException("You do not have access to this consultation");
     }
-    return consultation;
+    if (!user) return consultation;
+    const liked = await this.interactionsService.hasLiked('consultation', id, user.userId);
+    return { ...consultation, liked };
+  }
+
+  async like(id: string, user: CurrentUserPayload) {
+    const consultation = await this.findOne(id, user);
+    const wasLiked = await this.interactionsService.hasLiked('consultation', id, user.userId);
+    if (wasLiked) {
+      await this.interactionsService.removeLike('consultation', id, user.userId);
+    } else {
+      await this.interactionsService.addLike('consultation', id, user.userId);
+    }
+    consultation.likes = await this.interactionsService.countLikes('consultation', id);
+    await this.consultationsRepository.save(consultation);
+    return { likes: consultation.likes, liked: !wasLiked };
+  }
+
+  async listComments(id: string, user: CurrentUserPayload) {
+    await this.findOne(id, user);
+    return this.interactionsService.listComments('consultation', id);
+  }
+
+  async addComment(id: string, content: string, user: CurrentUserPayload) {
+    await this.findOne(id, user);
+    const comment = await this.interactionsService.addComment('consultation', id, content, user);
+    const consultation = await this.findOne(id, user);
+    consultation.comments = await this.interactionsService.countComments('consultation', id);
+    await this.consultationsRepository.save(consultation);
+    return comment;
+  }
+
+  async removeComment(id: string, commentId: string, user: CurrentUserPayload) {
+    await this.findOne(id, user);
+    const result = await this.interactionsService.removeComment('consultation', id, commentId);
+    const consultation = await this.findOne(id, user);
+    consultation.comments = await this.interactionsService.countComments('consultation', id);
+    await this.consultationsRepository.save(consultation);
+    return result;
   }
 
   async update(id: string, dto: UpdateConsultationDto, user: CurrentUserPayload) {

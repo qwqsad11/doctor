@@ -15,6 +15,7 @@ import { EmrModule } from './modules/emr/emr.module';
 import { ConferencesModule } from './modules/conferences/conferences.module';
 import { HealthModule } from './modules/health/health.module';
 import { SocialModule } from './modules/social/social.module';
+import { InteractionsModule } from './modules/interactions/interactions.module';
 
 // Guards
 import { JwtAuthGuard } from './common/guards/jwt-auth.guard';
@@ -58,6 +59,7 @@ import { jwtConfig } from './config/jwt.config';
     ConferencesModule,
     HealthModule,
     SocialModule,
+    InteractionsModule,
   ],
   providers: [
     // 全局 JWT 认证守卫（@Public() 跳过）

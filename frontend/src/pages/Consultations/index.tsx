@@ -11,14 +11,16 @@ import {
   Select,
   Popconfirm,
   Descriptions,
+  Divider,
   message,
 } from 'antd';
-import { PlusOutlined, SearchOutlined } from '@ant-design/icons';
+import { PlusOutlined, SearchOutlined, LikeOutlined, LikeFilled } from '@ant-design/icons';
 import type { ColumnsType } from 'antd/es/table';
 import { consultationsApi, patientsApi } from '@/services/business';
-import type { Consultation, Patient } from '@/services/types';
+import type { Consultation, Patient, Comment } from '@/services/types';
 import { formatDateTime } from '@/utils/format';
 import { displayLabel } from '@/utils/labels';
+import CommentSection from '@/components/CommentSection';
 
 const statusColor: Record<Consultation['status'], string> = {
   进行中: 'blue',
@@ -36,6 +38,8 @@ const ConsultationsPage: React.FC = () => {
 
   const [open, setOpen] = useState(false);
   const [detail, setDetail] = useState<Consultation | null>(null);
+  const [comments, setComments] = useState<Comment[]>([]);
+  const [commentsLoading, setCommentsLoading] = useState(false);
   const [patients, setPatients] = useState<Patient[]>([]);
   const [form] = Form.useForm();
 
@@ -96,6 +100,59 @@ const ConsultationsPage: React.FC = () => {
     }
   };
 
+  const viewDetail = async (id: string) => {
+    setCommentsLoading(true);
+    try {
+      const [d, c] = await Promise.all([
+        consultationsApi.detail(id),
+        consultationsApi.listComments(id),
+      ]);
+      setDetail(d);
+      setComments(c.list);
+    } catch (e: any) {
+      message.error(e.response?.data?.message || 'Failed to load consultation');
+    } finally {
+      setCommentsLoading(false);
+    }
+  };
+
+  const toggleLike = async (id: string) => {
+    try {
+      const r = await consultationsApi.like(id);
+      if (detail?.id === id) {
+        setDetail({ ...detail, likes: r.likes, liked: r.liked });
+      }
+    } catch (e: any) {
+      message.error(e.response?.data?.message || 'Could not update like');
+    }
+  };
+
+  const submitComment = async (content: string) => {
+    if (!detail) return;
+    try {
+      await consultationsApi.addComment(detail.id, content);
+      message.success('Comment added');
+      const c = await consultationsApi.listComments(detail.id);
+      setComments(c.list);
+      setDetail({ ...detail, comments: c.total });
+    } catch (e: any) {
+      message.error(e.response?.data?.message || 'Failed to add comment');
+    }
+  };
+
+  const deleteComment = async (commentId: string) => {
+    if (!detail) return;
+    try {
+      await consultationsApi.removeComment(detail.id, commentId);
+      message.success('Comment deleted');
+      const c = await consultationsApi.listComments(detail.id);
+      setComments(c.list);
+      setDetail({ ...detail, comments: c.total });
+    } catch (e: any) {
+      message.error(e.response?.data?.message || 'Failed to delete comment');
+    }
+  };
+
   const exportRecord = (record: Consultation) => {
     const blob = new Blob([`Consultation Record\nID: ${record.consultation_no}\nPatient: ${record.patient_name}\nSymptoms: ${record.symptom || '-'}\nAdvice: ${record.advice || '-'}`], { type: 'text/plain;charset=utf-8' });
     const link = document.createElement('a');
@@ -131,6 +188,17 @@ const ConsultationsPage: React.FC = () => {
       key: 'status',
       render: (s: Consultation['status']) => <Tag color={statusColor[s]}>{displayLabel(s)}</Tag>,
     },
+    {
+      title: 'Likes / Comments',
+      key: 'interactions',
+      width: 140,
+      render: (_, record) => (
+        <Space size="middle">
+          <span><LikeOutlined /> {record.likes}</span>
+          <span>💬 {record.comments}</span>
+        </Space>
+      ),
+    },
     { title: 'Created', dataIndex: 'created_at', key: 'created_at', render: formatDateTime },
     {
       title: 'Actions',
@@ -143,7 +211,7 @@ const ConsultationsPage: React.FC = () => {
           {record.status === '进行中' && (
             <Button type="link" size="small" onClick={() => changeStatus(record.id, '已完成')}>Complete</Button>
           )}
-          <Button type="link" size="small" onClick={() => setDetail(record)}>View record</Button>
+          <Button type="link" size="small" onClick={() => viewDetail(record.id)}>View & comment</Button>
           <Popconfirm title="Delete this consultation?" onConfirm={() => handleDelete(record.id)}>
             <Button type="link" size="small" danger>Delete</Button>
           </Popconfirm>
@@ -224,21 +292,43 @@ const ConsultationsPage: React.FC = () => {
         title="Consultation Record"
         open={!!detail}
         onCancel={() => setDetail(null)}
-        footer={detail ? <Space><Button onClick={() => exportRecord(detail)}>Export text record</Button><Button onClick={() => setDetail(null)}>Close</Button></Space> : null}
+        footer={null}
+        width={640}
       >
         {detail && (
-          <Descriptions column={1} bordered size="small">
-            <Descriptions.Item label="Consultation ID">{detail.consultation_no}</Descriptions.Item>
-            <Descriptions.Item label="Patient">{detail.patient_name}</Descriptions.Item>
-            <Descriptions.Item label="Doctor">{detail.doctor_name || '-'}</Descriptions.Item>
-            <Descriptions.Item label="Type">{displayLabel(detail.type)}</Descriptions.Item>
-            <Descriptions.Item label="Status">{displayLabel(detail.status)}</Descriptions.Item>
-            <Descriptions.Item label="Symptoms">{detail.symptom || '-'}</Descriptions.Item>
-            <Descriptions.Item label="Advice">{detail.advice || '-'}</Descriptions.Item>
-            <Descriptions.Item label="Attachments">{detail.attachments || '-'}</Descriptions.Item>
-            <Descriptions.Item label="Video">{detail.type === '视频' ? 'Local demo video room. It records status and reports but does not connect to a real video service.' : '-'}</Descriptions.Item>
-            <Descriptions.Item label="Created">{formatDateTime(detail.created_at)}</Descriptions.Item>
-          </Descriptions>
+          <>
+            <Descriptions column={1} bordered size="small">
+              <Descriptions.Item label="Consultation ID">{detail.consultation_no}</Descriptions.Item>
+              <Descriptions.Item label="Patient">{detail.patient_name}</Descriptions.Item>
+              <Descriptions.Item label="Doctor">{detail.doctor_name || '-'}</Descriptions.Item>
+              <Descriptions.Item label="Type">{displayLabel(detail.type)}</Descriptions.Item>
+              <Descriptions.Item label="Status">{displayLabel(detail.status)}</Descriptions.Item>
+              <Descriptions.Item label="Symptoms">{detail.symptom || '-'}</Descriptions.Item>
+              <Descriptions.Item label="Advice">{detail.advice || '-'}</Descriptions.Item>
+              <Descriptions.Item label="Attachments">{detail.attachments || '-'}</Descriptions.Item>
+              <Descriptions.Item label="Video">{detail.type === '视频' ? 'Local demo video room. It records status and reports but does not connect to a real video service.' : '-'}</Descriptions.Item>
+              <Descriptions.Item label="Created">{formatDateTime(detail.created_at)}</Descriptions.Item>
+            </Descriptions>
+
+            <Space style={{ marginTop: 16 }}>
+              <Button
+                type={detail.liked ? 'primary' : 'default'}
+                icon={detail.liked ? <LikeFilled /> : <LikeOutlined />}
+                onClick={() => toggleLike(detail.id)}
+              >
+                {detail.liked ? 'Liked' : 'Like'} {detail.likes}
+              </Button>
+              <Button onClick={() => exportRecord(detail)}>Export text record</Button>
+            </Space>
+
+            <Divider>Comments ({detail.comments})</Divider>
+            <CommentSection
+              comments={comments}
+              loading={commentsLoading}
+              onSubmit={submitComment}
+              onDelete={deleteComment}
+            />
+          </>
         )}
       </Modal>
     </Card>
